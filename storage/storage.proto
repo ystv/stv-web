@@ -1,0 +1,45 @@
+syntax = "proto3";
+package storage;
+option go_package = "github.com/ystv/stv-web/storage";
+
+message STV {
+    repeated Ballot ballots = 1;
+    repeated Candidate candidates = 2;
+    repeated Election elections = 3;
+    repeated URL urls = 4;
+    repeated Voter voters = 5;
+}
+
+message Ballot {
+    uint64 id = 1;
+    uint64 election = 2;
+    string voter = 3;
+    map<uint64, uint64> choice = 4; // map[order, candidate id]
+}
+
+message Candidate {
+    uint64 id = 1;
+    uint64 election = 2;
+    string name = 3;
+}
+
+message Election {
+    uint64 id = 1;
+    string name = 2;
+    string description = 3;
+    bool ron = 4;
+    bool open = 5;
+    bool closed = 6;
+}
+
+message URL {
+    string url = 1;
+    uint64 election = 2;
+    string voter = 3;
+    bool voted = 4;
+}
+
+message Voter {
+    string email = 1;
+    string name = 2;
+}
