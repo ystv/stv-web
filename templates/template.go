@@ -11,10 +11,10 @@ import (
 	"time"
 )
 
-const TemplatePrefix = "templates"
+const TemplatePrefix = "templates/"
 
 //go:embed *.tmpl
-var _ embed.FS
+var tmpls1 embed.FS
 
 type Templater struct {
 	dashboard *template.Template
@@ -40,6 +40,7 @@ func (t *Templater) Page(w io.Writer, p structs.PageParams) error {
 }
 
 func (t *Templater) RenderTemplate(w io.Writer, context structs.PageParams, data interface{}, mainTmpl string, addTmpls ...string) error {
+	_ = tmpls1
 	var err error
 
 	td := structs.Globals{
@@ -110,6 +111,9 @@ func (t *Templater) RenderTemplate(w io.Writer, context structs.PageParams, data
 		},
 		"inc": func(a int) int {
 			return a + 1
+		},
+		"even": func(a int) bool {
+			return a%2 == 0
 		},
 	})
 	t1, err = t1.ParseFiles(tmpls...)

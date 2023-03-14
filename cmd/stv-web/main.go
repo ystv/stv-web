@@ -5,6 +5,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/ystv/stv_web/controllers"
 	"github.com/ystv/stv_web/routes"
+	"github.com/ystv/stv_web/store"
 	"github.com/ystv/stv_web/structs"
 	_ "github.com/ystv/stv_web/templates"
 	"github.com/ystv/stv_web/utils"
@@ -27,11 +28,6 @@ func main() {
 		log.SetFlags(log.Llongfile)
 	}
 
-	//access := utils.NewAccesser(utils.Config{
-	//	AccessCookieName: config.Server.AccessCookieName, // jwt_token --> base64
-	//	DomainName:       config.Server.DomainName,
-	//})
-
 	var mailer *utils.Mailer
 	if config.Mail.Host != "" {
 		if config.Mail.Enabled {
@@ -50,8 +46,8 @@ func main() {
 				log.Printf("Connected to mail server: %s\n", config.Mail.Host)
 
 				mailer.Defaults = utils.Defaults{
-					DefaultTo:   "root@bswdi.co.uk",
-					DefaultFrom: "YSTV STV <afc@bswdi.co.uk>",
+					DefaultTo:   "liam.burnand@ystv.co.uk",
+					DefaultFrom: "YSTV STV <stv@ystv.co.uk>",
 				}
 			}
 		}
@@ -65,7 +61,7 @@ func main() {
 		for sig := range c {
 			if config.Mail.Enabled {
 				exitingTemplate := template.New("Exiting Template")
-				exitingTemplate = template.Must(exitingTemplate.Parse("<body>YSTV STV has been stopped!<br><br>{{if .Debug}}Exit signal: {{.Sig}}<br><br>{{end}}Version: {{.Version}}<br>Commit: {{.Commit}}</body>"))
+				exitingTemplate = template.Must(exitingTemplate.Parse("<body>YSTV STV has been stopped!<br><br>{{if .Debug}}Exit signal: {{.Sig}}<br><br>{{end}}</body>"))
 
 				starting := utils.Mail{
 					Subject:     "YSTV STV has been stopped!",
@@ -93,7 +89,6 @@ func main() {
 		}
 	}()
 
-	//err = routes.New(config, access, mailer).Start()
 	if err != nil {
 		if mailer != nil {
 			err1 := mailer.SendErrorFatalMail(utils.Mail{
@@ -118,25 +113,10 @@ func main() {
 		}
 		log.Fatalf("The web server couldn't be started!\n\n%s\n\nExiting!", err)
 	}
-
-	//session, err := handler.NewSession(config.Server.YSTV_API)
-	//if err != nil {
-	//	if config.Mail.Enabled {
-	//		err1 := mailer.SendErrorFatalMail(utils.Mail{
-	//			Error:       fmt.Errorf("the session couldn't be initialised: %s... exiting", err),
-	//			UseDefaults: true,
-	//		})
-	//		if err1 != nil {
-	//			fmt.Println(err1)
-	//		}
-	//	}
-	//	log.Fatalf("The session couldn't be initialised!\n\n%s\n\nExiting!", err)
-	//}
 
 	if config.Mail.Enabled {
-
-		startingTemplate := template.New("Starting Template")
-		startingTemplate = template.Must(startingTemplate.Parse("<body>YSTV STV starting{{if .Debug}} in debug mode!<br><b>Do not run in production! Authentication is disabled!</b>{{else}}!{{end}}<br><br>Version: {{.Version}}<br>Commit: {{.Commit}}<br><br>If you don't get another email then this has started correctly.</body>"))
+		startingTemplate := template.New("Startup email")
+		startingTemplate = template.Must(startingTemplate.Parse("<html><body>YSTV STV starting{{if .Debug}} in debug mode!<br><b>Do not run in production! Authentication is disabled!</b>{{else}}!{{end}}<br><br><br><br>If you don't get another email then this has started correctly.</body></html>"))
 
 		subject := "YSTV STV is starting"
 
@@ -162,17 +142,59 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		}
+
+		//fileTemplate := template.New("email.tmpl")
+		//fileTemplate = template.Must(fileTemplate.ParseFiles("templates/email.tmpl"))
+		//
+		//file := utils.Mail{
+		//	Subject: "YSTV - Vote for (Computing Director)",
+		//	Tpl:     fileTemplate,
+		//	To:      "liam.burnand@ystv.co.uk",
+		//	From:    "YSTV Elections <stv@ystv.co.uk>",
+		//	TplData: struct {
+		//		Election struct {
+		//			Name        string
+		//			Description string
+		//		}
+		//		Voter struct {
+		//			Name string
+		//		}
+		//		URL string
+		//	}{
+		//		Election: struct {
+		//			Name        string
+		//			Description string
+		//		}{
+		//			Name:        "Computing Director",
+		//			Description: "You will be responsible for all the servers!",
+		//		},
+		//		Voter: struct {
+		//			Name string
+		//		}{
+		//			Name: "Liam Burnand",
+		//		},
+		//		URL: "https://stv.ystv.co.uk/vote/1234567890",
+		//	},
+		//}
+		//
+		//err = mailer.SendMail(file)
+		//if err != nil {
+		//	fmt.Println(err)
+		//}
 	}
 
-	controller := controllers.GetController()
+	newStore, err := store.NewStore()
+	if err != nil {
+		log.Fatal("Failed to create store", err)
+	}
+
+	controller := controllers.GetController(config.Server.DomainName)
 
 	router1 := routes.New(&routes.NewRouter{
 		Config: config,
 		Port:   config.Server.Port,
-		Repos:  controllers.NewRepos(controller),
-		//DomainName:
-		Debug: config.Server.Debug,
-		//Access: accesser,
+		Repos:  controllers.NewRepos(controller, mailer, newStore),
+		Debug:  config.Server.Debug,
 		Mailer: mailer,
 	})
 	err = router1.Start()

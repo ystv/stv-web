@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+{{/*    <meta charset="utf-32">*/}}
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{block "title" .}}YSTV Elections{{end}}</title>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+    <script type="text/javascript"
+            src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.13.2/jquery-ui.min.js"></script>
+{{/*    <script type="text/javascript" src="https://raw.githubusercontent.com/furf/jquery-ui-touch-punch/master/jquery.ui.touch-punch.js"></script>*/}}
+{{/*    <script type="text/javascript" src="https://raw.githubusercontent.com/furf/jquery-ui-touch-punch/master/jquery.ui.touch-punch.min.js"></script>*/}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <style>
+        .prevent-select {
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE 10 and IE 11 */
+            user-select: none; /* Standard syntax */
+        }
+    </style>
+</head>
+<body>
+{{block "top-block" .}}
+    {{template "top" .}}
+{{end}}
+{{block "content-block" .}}
+    {{template "content" .}}
+{{end}}
+{{block "footer-block" .}}
+    {{template "footer" .}}
+{{end}}
+</body>
+</html>

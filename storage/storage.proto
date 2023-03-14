@@ -14,11 +14,11 @@ message Ballot {
     uint64 id = 1;
     uint64 election = 2;
     string voter = 3;
-    map<uint64, uint64> choice = 4; // map[order, candidate id]
+    map<uint64, string> choice = 4; // map[order, candidate id]
 }
 
 message Candidate {
-    uint64 id = 1;
+    string id = 1;
     uint64 election = 2;
     string name = 3;
 }
@@ -30,6 +30,7 @@ message Election {
     bool ron = 4;
     bool open = 5;
     bool closed = 6;
+    string result = 7;
 }
 
 message URL {

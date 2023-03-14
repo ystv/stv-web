@@ -25,7 +25,6 @@ type (
 	NewRouter struct {
 		Config *structs.Config
 		Port   string
-		//DomainName string
 		Repos  *controllers.Repos
 		Debug  bool
 		Mailer *utils.Mailer
@@ -130,10 +129,35 @@ func (r *Router) loadRoutes() {
 				}
 			}))
 		}
-		admin.GET("/", r.repos.Admin.Admin)
+		admin.GET("", r.repos.Admin.Admin)
+		admin.GET("/elections", r.repos.Admin.Elections)
+		election := admin.Group("/election")
+		{
+			election.GET("/:id", r.repos.Admin.Election)
+			election.PUT("", r.repos.Admin.AddElection)
+			election.PATCH("/:id", r.repos.Admin.EditElection)
+			election.PATCH("/open/:id", r.repos.Admin.OpenElection)
+			election.PATCH("/close/:id", r.repos.Admin.CloseElection)
+			election.DELETE("", r.repos.Admin.DeleteElection)
+			candidates := election.Group("/candidate")
+			{
+				candidates.PUT("/:id", r.repos.Admin.AddCandidate)
+				candidates.DELETE("", r.repos.Admin.DeleteCandidate)
+			}
+		}
+		voters := admin.Group("/voters")
+		{
+			voters.GET("", r.repos.Admin.Voters)
+			voters.PUT("", r.repos.Admin.AddVoter)
+			voters.DELETE("", r.repos.Admin.DeleteVoter)
+		}
 	}
 
-	r.router.GET("/vote/:url", r.repos.Vote.Vote)
+	vote := r.router.Group("/vote/:url")
+	{
+		vote.GET("", r.repos.Vote.Vote)
+		vote.PUT("", r.repos.Vote.AddVote)
+	}
 
 	r.router.GET("/public/:file", r.repos.Public.Public)
 

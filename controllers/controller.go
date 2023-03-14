@@ -2,9 +2,11 @@ package controllers
 
 import (
 	"github.com/labstack/echo/v4"
+	"github.com/ystv/stv_web/structs"
 	"github.com/ystv/stv_web/templates"
 	"github.com/ystv/stv_web/utils"
 	"net/http"
+	"time"
 )
 
 // ControllerInterface is the interface to which controllers adhere.
@@ -22,11 +24,24 @@ type ControllerInterface interface {
 
 // Controller is the base type of controllers in the 2016site architecture.
 type Controller struct {
-	Template *templates.Templater
+	pageParams structs.PageParams
+	Template   *templates.Templater
+	DomainName string
 }
 
-func GetController() Controller {
-	return Controller{}
+func GetController(domainName string) Controller {
+	return Controller{
+		pageParams: struct {
+			GetYear   func() int
+			Interface interface{}
+		}{
+			GetYear: func() int {
+				year, _, _ := time.Now().Date()
+				return year
+			},
+		},
+		DomainName: domainName,
+	}
 }
 
 // Get handles a HTTP GET request.

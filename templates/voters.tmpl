@@ -1,0 +1,165 @@
+{{define "title"}}YSTV Elections - Voters list{{end}}
+{{define "content"}}
+    <div class="container">
+        <div class="tabs is-toggle is-toggle-rounded">
+            <ul>
+                <li>
+                    <a href="/admin">
+                        <span>Admin Home</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/elections">
+                        <span>Elections</span>
+                    </a>
+                </li>
+                <li class="is-active">
+                    <a href="/admin/voters">
+                        <span>Voters</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="card prevent-select">
+            <div class="card-content">
+                <p>Below is a list of voters, you can remove voters if they are no longer taking part, below the
+                    table is where you can add more voters!</p>
+                <br>
+                {{if .PageData.Error}}
+                    An error occurred: {{.PageData.Error}}<br>
+                {{end}}
+                <table class="table is-striped">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Remove</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{range .PageData.Voters}}
+                        <tr>
+                            <td>{{.Name}}</td>
+                            <td>{{.Email}}</td>
+                            <td><a onclick="removeVoterModal('{{.Email}}', '{{.Name}}')">Remove</a></td>
+                        </tr>
+                    {{end}}
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Remove</th>
+                    </tr>
+                    </tfoot>
+                </table>
+                <br>
+                <br>
+                <p>Enter the name and the email of the voter, they will be emailed a link of an election when one
+                    opens.</p>
+                <br>
+                <form id="addVoter" style="max-width: 500px">
+                    <div class="field">
+                        <label class="label">Name</label>
+                        <div class="control">
+                            <input class="input" type="text" id="name" name="name" placeholder="Enter name" value="">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">Email</label>
+                        <div class="control">
+                            <input class="input" type="email" placeholder="Enter email" id="email" name="email"
+                                   onkeyup="ValidateEmail()" value="">
+                        </div>
+                        <p class="help is-danger" id="emailAlert"></p>
+                    </div>
+                    <button class="button is-link" onclick="submitNewVoter()">Add voter</button>
+                </form>
+                <br><br><br>
+                <div id="removeVoterModal" class="modal">
+                    <div class="modal-background"></div>
+                    <div class="modal-content">
+                        <div class="box">
+                            <article class="media">
+                                <div class="media-content">
+                                    <div class="content">
+                                        <p class="title" id="voterModalTitle"></p>
+                                        <p><strong>This action cannot be undone</strong><br></p>
+                                        <button class="button is-danger" onclick="removeVoter()">Remove</button>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                    <button class="modal-close is-large" aria-label="close"></button>
+                </div>
+                <script>
+                    document.querySelectorAll(
+                        ".modal-background, .modal-close,.modal-card-head .delete, .modal-card-foot .button"
+                    ).forEach(($el) => {
+                        const $modal = $el.closest(".modal");
+                        $el.addEventListener("click", () => {
+                            $modal.classList.remove("is-active");
+                        });
+                    });
+
+                    let valid = false;
+
+                    function submitNewVoter() {
+                        if (valid) {
+                            $.ajax({
+                                url: '/admin/voters',
+                                type: 'put',
+                                dataType: 'text',
+                                contentType: 'application/x-www-form-urlencoded',
+                                data: $("#addVoter").serialize(),
+                                success: function (data) {
+                                    location.reload();
+                                }
+                            })
+                        }
+                    }
+
+                    let email = "";
+
+                    function removeVoterModal(email1, name) {
+                        email = email1
+                        document.getElementById("removeVoterModal").classList.add("is-active");
+                        document.getElementById("voterModalTitle").innerHTML = "Are you sure you want to remove (" + name + ")";
+                    }
+
+                    function removeVoter() {
+                        $.ajax({
+                            url: '/admin/voters' + '?' + $.param({"email": email}),
+                            type: 'delete',
+                            dataType: 'text',
+                            contentType: 'application/x-www-form-urlencoded',
+                            success: function (data) {
+                                location.reload();
+                            }
+                        })
+                    }
+
+                    function ValidateEmail() {
+                        const validRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/;
+                        if ($("#email").val().match(validRegex)) {
+                            $("#emailAlert").removeClass("is-danger");
+                            $("#emailAlert").addClass("is-success");
+                            $("#email").removeClass("is-danger");
+                            $("#email").addClass("is-success");
+                            $("#emailAlert").innerText = "This email is valid";
+                            valid = true;
+                        } else {
+                            $("#emailAlert").removeClass("is-success");
+                            $("#emailAlert").addClass("is-danger");
+                            $("#email").removeClass("is-success");
+                            $("#email").addClass("is-danger");
+                            $("#emailAlert").innerText = "This email is invalid";
+                            valid = false;
+                        }
+                    }
+                </script>
+            </div>
+        </div>
+    </div>
+{{end}}

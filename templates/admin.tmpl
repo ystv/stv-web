@@ -1,0 +1,42 @@
+{{define "title"}}YSTV Elections - Admin Home{{end}}
+{{define "content"}}
+    <div class="container">
+        <div class="tabs is-toggle is-toggle-rounded">
+            <ul>
+                <li class="is-active">
+                    <a href="/admin">
+                        <span>Admin Home</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/elections">
+                        <span>Elections</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/voters">
+                        <span>Voters</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="card prevent-select">
+            <div class="card-content">
+                {{with .PageData }}
+                <p>Welcome to the admin back pages.<br>
+                    Use the navbar above to navigate to the other sections{{if or (or (or (ne .Elections.ToBeOpened 0) (ne .Elections.Open 0)) (or (ne .Elections.Closed 0) (ne .Elections.ErrInt 0))) (or (ne .Voters 0) (ne .Elections.Total 0))}}, below are some basic stats.<br>
+                    {{with .Elections}}
+                        {{if ne .Total 0}}
+                            Total Elections: {{.Total}}<br>
+                            {{if ne .Open 0}}Open Elections: {{.Open}}<br>{{end}}
+                            {{if ne .ToBeOpened 0}}Future Elections: {{.ToBeOpened}}<br>{{end}}
+                            {{if ne .Closed 0}}Closed Elections: {{.Closed}}<br>{{end}}
+                            {{if ne .ErrInt 0}}Number of errors: {{.ErrInt}}<br>{{end}}
+                        {{end}}
+                    {{end}}
+                    {{if ne .Voters 0}}Number of Voters: {{.Voters}}{{end}}
+                    {{else}}.{{end}}</p>{{end}}
+            </div>
+        </div>
+    </div>
+{{end}}

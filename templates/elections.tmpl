@@ -1,0 +1,154 @@
+{{define "title"}}YSTV Elections - Elections list{{end}}
+{{define "content"}}
+    <div class="container">
+        <div class="tabs is-toggle is-toggle-rounded">
+            <ul>
+                <li>
+                    <a href="/admin">
+                        <span>Admin Home</span>
+                    </a>
+                </li>
+                <li class="is-active">
+                    <a href="/admin/elections">
+                        <span>Elections</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/admin/voters">
+                        <span>Voters</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="card prevent-select">
+            <div class="card-content">
+                <p>Below is a list of voters, you can remove voters if they are no longer taking part, below the
+                    table is where you can add more voters!</p>
+                <br>
+                {{if .PageData.Error}}
+                    An error occurred: {{.PageData.Error}}<br>
+                {{end}}
+                <table class="table is-striped">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>View Details</th>
+                        <th>Remove</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{range .PageData.Elections}}
+                        <tr>
+                            <td>{{.Name}}</td>
+                            <td>{{.Description}}</td>
+                            <td><a href="/admin/election/{{.Id}}">View Details</a></td>
+                            <td><a onclick="removeElectionModal({{.Id}}, {{.Name}})">Remove</a></td>
+                        </tr>
+                    {{end}}
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>View Details</th>
+                        <th>Remove</th>
+                    </tr>
+                    </tfoot>
+                </table>
+                <div id="removeModal" class="modal">
+                    <div class="modal-background"></div>
+                    <div class="modal-content">
+                        <div class="box">
+                            <article class="media">
+                                <div class="media-content">
+                                    <div class="content">
+                                        <p class="title" id="modalTitle"></p>
+                                        <p><strong>This action cannot be undone</strong><br></p>
+                                        <button class="button is-danger" onclick="removeElection()">Remove</button>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                    <button class="modal-close is-large" aria-label="close"></button>
+                </div>
+                <br>
+                <br>
+                <p>Enter the name and the email of the voter, they will be emailed a link of an election when one
+                    opens.</p>
+                <br>
+                <form id="addElection" style="max-width: 500px">
+                    <div class="field">
+                        <label class="label">Name</label>
+                        <div class="control">
+                            <input class="input" type="text" id="name" name="name" placeholder="Enter name" value="">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">Description</label>
+                        <div class="control">
+                            <input class="input" type="text" placeholder="Enter description" id="description"
+                                   name="description" value="">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="checkbox">Include R.O.N.</label>
+                        <div class="control">
+                            <input type="checkbox" name="ron" id="ron" checked>
+                        </div>
+                    </div>
+                    <button class="button is-link" onclick="submitNewElection()">Add election</button>
+                </form>
+                <br><br><br>
+                <script>
+                    document.querySelectorAll(
+                        ".modal-background, .modal-close,.modal-card-head .delete, .modal-card-foot .button"
+                    ).forEach(($el) => {
+                        const $modal = $el.closest(".modal");
+                        $el.addEventListener("click", () => {
+                            $modal.classList.remove("is-active");
+                        });
+                    });
+
+                    let valid = false;
+
+                    function submitNewElection() {
+                        if (document.getElementById("name").value.length > 0 && document.getElementById("description").value.length > 0) {
+                            $.ajax({
+                                url: '/admin/election',
+                                type: 'put',
+                                dataType: 'text',
+                                contentType: 'application/x-www-form-urlencoded',
+                                data: $("#addElection").serialize(),
+                                success: function (data) {
+                                    location.reload();
+                                }
+                            })
+                        }
+                    }
+
+                    let id = -1;
+
+                    function removeElectionModal(id1, name) {
+                        id = id1
+                        document.getElementById("removeModal").classList.add("is-active");
+                        document.getElementById("modalTitle").innerHTML = "Are you sure you want to remove (" + name + ")";
+                    }
+
+                    function removeElection() {
+                        $.ajax({
+                            url: '/admin/election' + '?' + $.param({"id": id}),
+                            type: 'delete',
+                            dataType: 'text',
+                            contentType: 'application/x-www-form-urlencoded',
+                            success: function (data) {
+                                location.reload();
+                            }
+                        })
+                    }
+                </script>
+            </div>
+        </div>
+    </div>
+{{end}}

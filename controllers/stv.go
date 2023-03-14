@@ -1,5 +1,10 @@
 package controllers
 
+import (
+	"github.com/ystv/stv_web/store"
+	"github.com/ystv/stv_web/utils"
+)
+
 type Repos struct {
 	Admin  *AdminRepo
 	Home   *HomeRepo
@@ -7,11 +12,11 @@ type Repos struct {
 	Vote   *VoteRepo
 }
 
-func NewRepos(controller Controller) *Repos {
+func NewRepos(controller Controller, mailer *utils.Mailer, store *store.Store) *Repos {
 	return &Repos{
-		Admin:  NewAdminRepo(controller),
+		Admin:  NewAdminRepo(controller, mailer, store),
 		Home:   NewHomeRepo(controller),
 		Public: NewPublicRepo(controller),
-		Vote:   NewVoteRepo(controller),
+		Vote:   NewVoteRepo(controller, store),
 	}
 }

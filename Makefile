@@ -2,12 +2,12 @@
 GOBUILD=CGO_ENABLED=0 go build
 GOCLEAN=go clean
 PROTOC=protoc
-STATIK=statik
+#STATIK=statik
 BINARY_NAME=stv-web
 
 PROTO_GENERATED=storage/storage.pb.go
-STATIK_GENERATED=statik/statik.go
-PUBLIC_FILES=$(wildcard public/*)
+#STATIK_GENERATED=statik/statik.go
+#PUBLIC_FILES=$(wildcard templates/tmpls/*)
 
 .DEFAULT_GOAL := build
 
@@ -16,16 +16,16 @@ PUBLIC_FILES=$(wildcard public/*)
 
 #$(STATIK_GENERATED): $(PUBLIC_FILES)
 #	echo "$(PUBLIC_FILES)"
-#	$(STATIK) -f -src=templates/*.tmpl -dest=.
+#	$(STATIK) -f -src=templates/tmpls/ -dest=.
 
-build: $(PROTO_GENERATED) $(STATIK_GENERATED)
+build: $(PROTO_GENERATED) #$(STATIK_GENERATED)
 	$(GOBUILD) -o $(BINARY_NAME) -v ./cmd/stv-web
 .PHONY: build
 
 clean:
 	$(GOCLEAN)
 	rm -f $(PROTO_GENERATED)
-	rm -f $(STATIK_GENERATED)
+	#rm -f $(STATIK_GENERATED)
 .PHONY: clean
 
 all: build

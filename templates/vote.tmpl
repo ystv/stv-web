@@ -1,0 +1,196 @@
+{{define "title"}}YSTV Elections - Vote{{end}}
+{{define "content"}}
+    <div class="container prevent-select">
+        <div class="card">
+            <div class="card-content">
+                <p class="title">Vote below</p>
+                <p>Welcome to the election of ({{.PageData.Election.Name}}), {{.PageData.Voter.Name}}<br>
+                    {{if .PageData.Election.Description}}<br /><br />Here is a brief description of the role: {{.PageData.Election.Description}}{{end}}<br><br>
+                    Use the up and down arrows next to eah candidate to position it, where 1 is your preference and then everyone down from there.</p><br>
+                <form id="voteForm">
+                    <table class="table table-condensed table-striped prevent-select" style="max-width: 500px;" id="voteTable">
+                        <thead>
+                        <tr>
+                            <th>Order</th>
+                            <th>Candidate</th>
+                            <th>Move</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {{$i := 0}}
+                        {{range .PageData.Candidates}}
+                            <tr{{if even (inc $i)}} class="even"{{end}}>
+                                <td>{{inc $i}}</td>
+                                <td>{{.Name}}
+                                    <input type="text" name="order~{{$i}}" value="{{.Id}}" style="display: none"/></td>
+                                <td>
+                                    <a class="up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <a class="down">down &darr;</a>
+                                </td>
+                            </tr>
+                            {{$i = inc $i}}
+                        {{end}}
+                        {{if .PageData.Election.Ron}}
+                            <tr{{if even (inc $i)}} class="even"{{end}}>
+                                <td>{{inc $i}}</td>
+                                <td>R.O.N.
+                                    <input type="text" name="order~{{$i}}" value="R.O.N." style="display: none"/></td>
+                                <td>
+                                    <a class="up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <a class="down">down &darr;</a>
+                                </td>
+                            </tr>
+                        {{end}}
+{{/*                        <tr>*/}}
+{{/*                            <td>1</td>*/}}
+{{/*                            <td>Java*/}}
+{{/*                                <input type="text" name="order~0" value="asoihd - java" style="display: none"/></td>*/}}
+{{/*                            <td>*/}}
+{{/*                                <a class="up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;*/}}
+{{/*                                <a class="down">down &darr;</a>*/}}
+{{/*                            </td>*/}}
+{{/*                        </tr>*/}}
+{{/*                        <tr class="even">*/}}
+{{/*                            <td>2</td>*/}}
+{{/*                            <td>C++*/}}
+{{/*                                <input type="text" name="order~1" value="asiuyfv - c++" style="display: none"/></td>*/}}
+{{/*                            <td>*/}}
+{{/*                                <a class="up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;*/}}
+{{/*                                <a class="down">down &darr;</a>*/}}
+{{/*                            </td>*/}}
+{{/*                        </tr>*/}}
+{{/*                        <tr>*/}}
+{{/*                            <td>3</td>*/}}
+{{/*                            <td>Python*/}}
+{{/*                                <input type="text" name="order~2" value="ou867t6rtf - python" style="display: none"/></td>*/}}
+{{/*                            <td>*/}}
+{{/*                                <a class="up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;*/}}
+{{/*                                <a class="down">down &darr;</a>*/}}
+{{/*                            </td>*/}}
+{{/*                        </tr>*/}}
+{{/*                        <tr class="even">*/}}
+{{/*                            <td>4</td>*/}}
+{{/*                            <td>HTML*/}}
+{{/*                                <input type="text" name="order~3" value="87yghsd - html" style="display: none"/></td>*/}}
+{{/*                            <td>*/}}
+{{/*                                <a class="up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;*/}}
+{{/*                                <a class="down">down &darr;</a>*/}}
+{{/*                            </td>*/}}
+{{/*                        </tr>*/}}
+{{/*                        <tr>*/}}
+{{/*                            <td>5</td>*/}}
+{{/*                            <td>CSS*/}}
+{{/*                                <input type="text" name="order~4" value="jhjhs - css" style="display: none"/></td>*/}}
+{{/*                            <td>*/}}
+{{/*                                <a class="up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;*/}}
+{{/*                                <a class="down">down &darr;</a>*/}}
+{{/*                            </td>*/}}
+{{/*                        </tr>*/}}
+{{/*                        <tr class="even">*/}}
+{{/*                            <td>6</td>*/}}
+{{/*                            <td>Javascript*/}}
+{{/*                                <input type="text" name="order~5" value="oui8y6t7 - javascript" style="display: none"/></td>*/}}
+{{/*                            <td>*/}}
+{{/*                                <a class="up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;*/}}
+{{/*                                <a class="down">down &darr;</a>*/}}
+{{/*                            </td>*/}}
+{{/*                        </tr>*/}}
+{{/*                        <tr>*/}}
+{{/*                            <td>7</td>*/}}
+{{/*                            <td>MySql*/}}
+{{/*                                <input type="text" name="order~6" value="kjghf - mysql" style="display: none"/></td>*/}}
+{{/*                            <td>*/}}
+{{/*                                <a class="up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;*/}}
+{{/*                                <a class="down">down &darr;</a>*/}}
+{{/*                            </td>*/}}
+{{/*                        </tr>*/}}
+{{/*                        <tr>*/}}
+{{/*                            <td>8</td>*/}}
+{{/*                            <td>PHP*/}}
+{{/*                                <input type="text" name="order~7" value="mlkjghf - php" style="display: none"/></td>*/}}
+{{/*                            <td>*/}}
+{{/*                                <a class="up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;*/}}
+{{/*                                <a class="down">down &darr;</a>*/}}
+{{/*                            </td>*/}}
+{{/*                        </tr>*/}}
+                        </tbody>
+                    </table>
+                    <button id="voteSubmit" type="button" onclick="voteSubmitModal()">Submit vote</button>
+                </form>
+                <br>
+                <br>
+                <br>
+                <div id="voteModal" class="modal">
+                    <div class="modal-background"></div>
+                    <div class="modal-content">
+                        <div class="box">
+                            <article class="media">
+                                <div class="media-content">
+                                    <div class="content">
+                                        <p class="title">Submit vote</p>
+                                        <p>If you submit this vote then you cannot come back and vote again, are you sure this is your selection?<br>
+                                            <strong>This action cannot be undone!</strong><br></p>
+                                        <button class="button is-danger" onclick="submitVote()">Submit vote</button>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                    <button class="modal-close is-large" aria-label="close"></button>
+                </div>
+            </div>
+            <script>
+                document.querySelectorAll(
+                    ".modal-background, .modal-close,.modal-card-head .delete, .modal-card-foot .button"
+                ).forEach(($el) => {
+                    const $modal = $el.closest(".modal");
+                    $el.addEventListener("click", () => {
+                        $modal.classList.remove("is-active");
+                    });
+                });
+
+                function voteSubmitModal() {
+                    document.getElementById("voteModal").classList.add("is-active");
+                }
+
+                function submitVote() {
+                    $.ajax({
+                        url: '/vote/{{.PageData.URL}}',
+                        type: 'put',
+                        dataType: 'text',
+                        contentType: 'application/x-www-form-urlencoded',
+                        data: $("#voteForm").serializeArray(),
+                        success: function (data) {
+                            console.log(data);
+                            location.reload();
+                        }
+                    })
+                }
+
+                $(document).ready(function () {
+                    $(".up,.down").click(function () {
+                        var row = $(this).parents("tr:first");
+                        if ($(this).is(".up")) {
+                            row.insertBefore(row.prev());
+                        } else {
+                            row.insertAfter(row.next());
+                        }
+                        $("#voteTable").find("tr").each(function (index) {
+                            $("#voteTable").find("tr").removeClass("even odd");
+                            if (index > 0) {
+                                $(this).find("td").eq(0).html(index);
+                                $(this).find("input").eq(0).attr("name", "order~" + (index - 1));
+                                if (index % 2 === 0) {
+                                    $("#voteTable").find("tr:even").addClass("even");
+                                } else {
+                                    $("#voteTable").find("tr:odd").addClass("odd");
+                                }
+                            }
+                        });
+                    });
+                });
+            </script>
+            </div>
+        </div>
+    </div>
+{{end}}

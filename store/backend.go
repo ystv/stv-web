@@ -5,6 +5,6 @@ import (
 )
 
 type Backend interface {
-	Read() (storage.STV, error)
-	Write(state storage.STV) error
+	Read() (*storage.STV, error)
+	Write(state *storage.STV) error
 }

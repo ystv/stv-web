@@ -1,0 +1,328 @@
+{{define "title"}}YSTV Elections - Election ({{.PageData.Election.Name}}){{end}}
+{{define "content"}}
+    <div class="container">
+            <div class="card">
+                <div class="card-content">
+                    <a href="/admin/elections">Return to list</a><br><br>
+                    {{with .PageData.Election}}
+                    <p>You are viewing ({{.Name}})<br>
+                        Name: {{.Name}}<br>
+                        Description: {{.Description}}<br>
+                        Is R.O.N. enabled: {{if .Ron}}enabled{{else}}disabled{{end}}<br><br>
+                        {{if and (not .Open) (not .Closed)}}
+                            Current state: Yet to be opened, can still edit this election<br><br>
+                            Next action to take: <a onclick="openElectionModal()">Open election</a><br><br>
+                            Edit Election: <a onclick="editElectionModal()">Edit election</a><br><br>
+                            Remove Election: <a onclick="removeElectionModal()">Remove Election</a>
+                        {{else if and .Open (not .Closed)}}
+                            Current ballots (refresh to update): {{$.PageData.Ballots}}/{{$.PageData.Voters}}<br><br>
+                            Current state: Open<br><br>
+                            Next action to take: <a onclick="closeElectionModal()">Close election</a>
+                        {{else if and (not .Open) .Closed}}
+                            Voting stats (ballots / voters): {{$.PageData.Ballots}}/{{$.PageData.Voters}}<br><br>
+                            Current state: Closed<br><br>
+                            <strong>Result: {{.Result}}</strong><br><br>
+                            Remove Election: <a onclick="removeElectionModal()">Remove Election</a>
+                        {{end}}
+                    </p>
+                    <br>
+                    <br>
+                    <p>Below is a list of the candidates taking part in the election{{if and (not .Open) (not .Closed)}}, use form below to add another candidate{{end}}.</p><br><br>
+                    <table class="table is-striped">
+                    {{end}}
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                {{if and (not $.PageData.Election.Open) (not $.PageData.Election.Closed)}}
+                                <th>Remove</th>
+                                {{end}}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{range .PageData.Candidates}}
+                                <tr>
+                                    <td>{{.Name}}</td>
+                                    {{if and (not $.PageData.Election.Open) (not $.PageData.Election.Closed)}}
+                                    <td><a onclick="removeCandidateModal({{.Id}}, {{.Name}})">Remove</a></td>
+                                    {{end}}
+                                </tr>
+                            {{end}}
+                            {{if .PageData.Election.Ron}}
+                            <tr>
+                                <td>R.O.N.</td>
+                                {{if and (not .PageData.Election.Open) (not .PageData.Election.Closed)}}
+                                <td></td>
+                                {{end}}
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table><br>
+                    <br>
+                    {{with .PageData.Election}}
+                    {{if and (not .Open) (not .Closed)}}
+                    <p>Enter the name of the candidate.</p>
+                    <br>
+                    <form id="addCandidate" style="max-width: 500px">
+                        <div class="field">
+                            <label class="label">Name</label>
+                            <div class="control">
+                                <input class="input" type="text" id="name" name="name" placeholder="Enter name" value="">
+                            </div>
+                        </div>
+                        <button class="button is-link" onclick="submitNewCandidate()">Add candidate</button>
+                    </form>
+                    <br><br><br>{{end}}
+                </div>
+                {{if and (not .Open) (not .Closed)}}
+                <div id="openModal" class="modal">
+                    <div class="modal-background"></div>
+                    <div class="modal-content">
+                        <div class="box">
+                            <article class="media">
+                                <div class="media-content">
+                                    <div class="content">
+                                        <p class="title">Open ({{.Name}})</p>
+                                        <p>If you open the election then an email will be sent to every voter allowing
+                                            them to vote.<br>
+                                            You will no longer be able to edit this election!<br>
+                                            <strong>This action cannot be undone!</strong><br></p>
+                                        <button class="button is-danger" onclick="openElection()">Open Election</button>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                    <button class="modal-close is-large" aria-label="close"></button>
+                </div>{{end}}
+                {{if and (not .Open) (not .Closed)}}
+                <div id="editModal" class="modal">
+                    <div class="modal-background"></div>
+                    <div class="modal-content">
+                        <div class="box">
+                            <article class="media">
+                                <div class="media-content">
+                                    <div class="content">
+                                        <p class="title">Edit ({{.Name}})</p>
+                                        <form id="editElection" style="max-width: 500px">
+                                            <div class="field">
+                                                <label class="label" for="name1">Name</label>
+                                                <div class="control">
+                                                    <input class="input" type="text" id="name1" name="name1"
+                                                           placeholder="Enter name" value="{{.Name}}">
+                                                </div>
+                                            </div>
+                                            <div class="field">
+                                                <label class="label" for="description">Description</label>
+                                                <div class="control">
+                                                    <input class="input" type="text" placeholder="Enter description"
+                                                           id="description"
+                                                           name="description" value="{{.Description}}">
+                                                </div>
+                                            </div>
+                                            <div class="field">
+                                                <label class="checkbox" for="ron">Include R.O.N.</label>
+                                                <div class="control">
+                                                    <input type="checkbox" name="ron" id="ron"
+                                                           {{if .Ron}}checked{{end}}>
+                                                </div>
+                                            </div>
+                                            <button class="button is-link" onclick="submitEditElection()">Edit
+                                                election
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                    <button class="modal-close is-large" aria-label="close"></button>
+                </div>{{end}}
+                {{if and .Open (not .Closed)}}
+                <div id="closeModal" class="modal">
+                    <div class="modal-background"></div>
+                    <div class="modal-content">
+                        <div class="box">
+                            <article class="media">
+                                <div class="media-content">
+                                    <div class="content">
+                                        <p class="title">Close ({{.Name}})</p>
+                                        <p>If you close the election then any remaining voters will not be able to vote.<br>
+                                            <strong>This action cannot be undone!</strong><br></p>
+                                        <button class="button is-danger" onclick="closeElection()">Close Election
+                                        </button>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                    <button class="modal-close is-large" aria-label="close"></button>
+                </div>{{end}}
+                {{if not .Open}}
+                <div id="removeModal" class="modal">
+                    <div class="modal-background"></div>
+                    <div class="modal-content">
+                        <div class="box">
+                            <article class="media">
+                                <div class="media-content">
+                                    <div class="content">
+                                        <p class="title">Are you sure you want to remove ({{.Name}})</p>
+                                        <p><strong>This action cannot be undone</strong><br></p>
+                                        <button class="button is-danger" onclick="removeElection()">Remove</button>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                    <button class="modal-close is-large" aria-label="close"></button>
+                </div>{{end}}
+                {{if and (not .Open) (not .Closed)}}
+                <div id="removeCandidateModal" class="modal">
+                    <div class="modal-background"></div>
+                    <div class="modal-content">
+                        <div class="box">
+                            <article class="media">
+                                <div class="media-content">
+                                    <div class="content">
+                                        <p class="title" id="candidateModalTitle"></p>
+                                        <p><strong>This action cannot be undone</strong><br></p>
+                                        <button class="button is-danger" onclick="removeCandidate()">Remove</button>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </div>
+                    <button class="modal-close is-large" aria-label="close"></button>
+                </div>{{end}}
+            </div>
+            <script>
+                document.querySelectorAll(
+                    ".modal-background, .modal-close,.modal-card-head .delete, .modal-card-foot .button"
+                ).forEach(($el) => {
+                    const $modal = $el.closest(".modal");
+                    $el.addEventListener("click", () => {
+                        $modal.classList.remove("is-active");
+                    });
+                });
+
+                {{if and (not .Open) (not .Closed)}}
+
+                function editElectionModal() {
+                    document.getElementById("editModal").classList.add("is-active");
+                }
+
+                function submitEditElection() {
+                    if (document.getElementById("name1").value.length > 0 && document.getElementById("description").value.length > 0) {
+                        $.ajax({
+                            url: '/admin/election/{{.Id}}',
+                            type: 'patch',
+                            dataType: 'text',
+                            contentType: 'application/x-www-form-urlencoded',
+                            data: $("#editElection").serialize(),
+                            success: function (data) {
+                                console.log(data)
+                                console.log(2)
+                                location.reload();
+                            }
+                        });
+                    }
+                }{{end}}
+
+                {{if and (not .Open) (not .Closed)}}
+
+                function openElectionModal() {
+                    document.getElementById("openModal").classList.add("is-active");
+                }
+
+                function openElection() {
+                    $.ajax({
+                        url: '/admin/election/open/{{.Id}}',
+                        type: 'patch',
+                        dataType: 'text',
+                        contentType: 'application/x-www-form-urlencoded',
+                        success: function (data) {
+                            console.log(data)
+                            location.reload();
+                        }
+                    });
+                }{{end}}
+
+                {{if .Open}}
+
+                function closeElectionModal() {
+                    document.getElementById("closeModal").classList.add("is-active");
+                }
+
+                function closeElection() {
+                    $.ajax({
+                        url: '/admin/election/close/{{.Id}}',
+                        type: 'patch',
+                        dataType: 'text',
+                        contentType: 'application/x-www-form-urlencoded',
+                        success: function (data) {
+                            console.log(data)
+                            location.reload();
+                        }
+                    });
+                }{{end}}
+
+                {{if not .Open}}
+
+                function removeElectionModal() {
+                    document.getElementById("removeModal").classList.add("is-active");
+                }
+
+                function removeElection() {
+                    $.ajax({
+                        url: '/admin/election' + '?' + $.param({"id": {{.Id}}}),
+                        type: 'delete',
+                        dataType: 'text',
+                        contentType: 'application/x-www-form-urlencoded',
+                        success: function (data) {
+                            location.reload();
+                        }
+                    })
+                }{{end}}
+
+                {{if and (not .Open) (not .Closed)}}
+
+                function submitNewCandidate() {
+                    if (document.getElementById("name").value.length > 0) {
+                        $.ajax({
+                            url: '/admin/election/candidate/{{.Id}}',
+                            type: 'put',
+                            dataType: 'text',
+                            contentType: 'application/x-www-form-urlencoded',
+                            data: $("#addCandidate").serialize(),
+                            success: function (data) {
+                                console.log(data)
+                                location.reload();
+                            }
+                        })
+                    }
+                }
+
+                let candidateId = "";
+
+                function removeCandidateModal(id1, name) {
+                    candidateId = id1
+                    document.getElementById("removeCandidateModal").classList.add("is-active");
+                    document.getElementById("candidateModalTitle").innerHTML = "Are you sure you want to remove (" + name + ")";
+                }
+
+                function removeCandidate() {
+                    $.ajax({
+                        url: '/admin/election/candidate' + '?' + $.param({"id": candidateId}),
+                        type: 'delete',
+                        dataType: 'text',
+                        contentType: 'application/x-www-form-urlencoded',
+                        success: function (data) {
+                            location.reload();
+                        }
+                    })
+                }
+
+                {{end}}
+            </script>
+        {{end}}
+    </div>
+{{end}}

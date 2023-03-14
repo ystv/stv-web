@@ -6,10 +6,15 @@ replace google.golang.org/grpc => google.golang.org/grpc v1.26.0
 
 require (
 	github.com/BurntSushi/toml v1.2.1
+	github.com/bndr/gotabulate v1.1.2
 	github.com/go-ldap/ldap/v3 v3.1.7
+	github.com/google/uuid v1.3.0
 	github.com/labstack/echo/v4 v4.10.2
+	github.com/rakyll/statik v0.1.7
 	github.com/xhit/go-simple-mail/v2 v2.13.0
+	golang.org/x/net v0.7.0
 	golang.org/x/text v0.7.0
+	google.golang.org/protobuf v1.29.0
 )
 
 require (
@@ -24,7 +29,6 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	golang.org/x/crypto v0.6.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 )

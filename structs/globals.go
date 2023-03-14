@@ -8,6 +8,7 @@ type (
 	}
 
 	PageParams struct {
+		GetYear   func() int
 		Interface interface{}
 	}
 )
