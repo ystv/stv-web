@@ -1,0 +1,21 @@
+# Example config.toml
+
+[server]
+    debug = false # boolean
+    port = "" # e.g. ":80:
+    domain_name = "" # domain name
+
+[ad]
+    ad_server = "" # Active Directory server
+    ad_port = -1 # Active Directory port
+    ad_base_dn = "" # User base DN
+    ad_security = -1 # 0-SecurityNone 1-SecurityTLS 2-SecurityStartTLS 3-SecurityInsecureTLS 4-SecurityInsecureStartTLS
+    [ad.bind]
+        ad_bind_username = "" # Bind username
+        ad_bind_password = "" # Bind password
+
+[mail]
+    mail_host = "" # Mail server
+    mail_user = "" # Mail username
+    mail_pass = "" # Mail password
+    mail_port = -1 # Mail port

@@ -30,7 +30,6 @@ type (
 	}
 
 	Mail struct {
-		Enabled  bool   `toml:"mail_enabled"`
 		Host     string `toml:"mail_host"`
 		User     string `toml:"mail_user"`
 		Password string `toml:"mail_pass"`
