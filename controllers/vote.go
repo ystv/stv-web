@@ -127,7 +127,6 @@ func (r *VoteRepo) AddVote(c echo.Context) error {
 
 	for i := 0; i < len(c.Request().Form); i++ {
 		m[uint64(i)] = c.Request().Form.Get("order~" + strconv.FormatUint(uint64(i), 10))
-		//fmt.Println("order~"+strconv.FormatUint(uint64(i), 10), c.Request().Form.Get("order~"+strconv.FormatUint(uint64(i), 10)))
 	}
 
 	ballot := &storage.Ballot{
