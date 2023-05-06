@@ -15,7 +15,8 @@
                     Edit Election:<br><a class="button is-warning" onclick="editElectionModal()">Edit election</a><br><br><br>
                     Remove Election:<br><a class="button is-danger" onclick="removeElectionModal()">Remove Election</a>
                 {{else if and .Open (not .Closed)}}
-                    Current ballots (refresh to update): {{$.PageData.Ballots}}/{{$.PageData.Voters}}<br><br>
+                    Current ballots (click the button below to refresh): {{$.PageData.Ballots}}/{{$.PageData.Voters}}<br>
+                    <a class="button" href="{{$.PageData.URL}}">Refresh</a><br><br>
                     Current state: Open<br><br>
                     Next action to take: <a class="button is-danger" onclick="closeElectionModal()">Close election</a>
                 {{else if and (not .Open) .Closed}}

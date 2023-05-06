@@ -251,12 +251,14 @@ func (r *AdminRepo) Election(c echo.Context) error {
 		Ballots    int
 		Voters     int
 		Error      string
+		URL        string
 	}{
 		Election:   election,
 		Candidates: candidates,
 		Ballots:    noOfBallots,
 		Voters:     noOfVoters,
 		Error:      err1,
+		URL:        "https://" + r.controller.DomainName + "/admin/election/" + strconv.FormatUint(election.Id, 10),
 	}
 	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, data, "election.tmpl")
 	if err != nil {
