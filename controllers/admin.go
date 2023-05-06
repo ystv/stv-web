@@ -552,11 +552,7 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 		return r.errorHandle(c, fmt.Errorf("election failed: %v", err))
 	}
 
-	//fmt.Println(electionResults)
-
 	result := &storage.Result{}
-
-	//fmt.Println("Rounds:", len(electionResults.Rounds))
 
 	result.Rounds = uint64(len(electionResults.Rounds))
 
@@ -564,30 +560,23 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 		rounds := &storage.Round{}
 		rounds.Round = uint64(i)
 		rounds.Blanks = uint64(round.NumberOfBlankVotes)
-		//fmt.Printf("Round: %d, No. of blank votes: %f\n", i+1, round.NumberOfBlankVotes)
-		//fmt.Println(round.CandidateResults)
 		for j, c := range round.CandidateResults {
 			candidateStatus := &storage.CandidateStatus{}
 			candidateStatus.CandidateRank = uint64(j)
 			candidateStatus.Id = c.Candidate.Name
 			candidateStatus.NoOfVotes = c.NumberOfVotes
 			candidateStatus.Status = string(c.Status)
-			//fmt.Printf("No. %d, Candidate: %s, No. of votes: %f, Status: %s\n", j+1, c.Candidate.Name, c.NumberOfVotes, c.Status)
 			rounds.CandidateStatus = append(rounds.CandidateStatus, candidateStatus)
 		}
-		//fmt.Println()
 		result.Round = append(result.Round, rounds)
 	}
 	winners := electionResults.GetWinners()
-	//fmt.Printf("Winner: %s!", winners[0].Name)
 
 	if len(winners) != 1 {
 		return r.errorHandle(c, fmt.Errorf("invalid abount of winners"))
 	}
 
 	result.Winner = winners[0].Name
-
-	//winners := electionResults.GetWinners()
 
 	election.Result = result
 
