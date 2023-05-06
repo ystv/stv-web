@@ -55,7 +55,7 @@ func NewMailer(config MailConfig) (*Mailer, error) {
 		Port:           config.Port,
 		Username:       config.Username,
 		Password:       config.Password,
-		Encryption:     mail.EncryptionSSLTLS,
+		Encryption:     mail.EncryptionSTARTTLS,
 		Authentication: mail.AuthLogin,
 		ConnectTimeout: 10 * time.Second,
 		SendTimeout:    10 * time.Second,

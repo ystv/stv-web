@@ -43,6 +43,8 @@ func main() {
 		} else {
 			log.Printf("Connected to mail server: %s\n", config.Mail.Host)
 
+			mailer.KeepAlive = true
+
 			mailer.Defaults = utils.Defaults{
 				DefaultTo:   "liam.burnand@ystv.co.uk",
 				DefaultFrom: "YSTV STV <stv@ystv.co.uk>",
@@ -130,14 +132,17 @@ func main() {
 		},
 	}
 
-	err = mailer.SendMail(starting)
-	if err != nil {
-		fmt.Println(err)
-	}
-
 	newStore, err := store.NewStore()
 	if err != nil {
 		log.Fatal("Failed to create store", err)
+	}
+
+	_, err = newStore.GetAllowRegistration()
+	if err != nil {
+		_, err = newStore.SetAllowRegistration(false)
+		if err != nil {
+			log.Fatal("Failed to initialise allow registration in store", err)
+		}
 	}
 
 	controller := controllers.GetController(config.Server.DomainName)
@@ -149,6 +154,12 @@ func main() {
 		Debug:  config.Server.Debug,
 		Mailer: mailer,
 	})
+
+	err = mailer.SendMail(starting)
+	if err != nil {
+		log.Fatal("Unable to send email")
+	}
+
 	err = router1.Start()
 	if err != nil {
 		err1 := mailer.SendErrorFatalMail(utils.Mail{

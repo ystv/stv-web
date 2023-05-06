@@ -153,6 +153,13 @@ func (r *Router) loadRoutes() {
 		}
 	}
 
+	registration := r.router.Group("/registration")
+	{
+		registration.GET("", r.repos.Registration.Register)
+		registration.GET("/qr", r.repos.Registration.QR)
+		registration.POST("", r.repos.Registration.AddVoter)
+	}
+
 	vote := r.router.Group("/vote/:url")
 	{
 		vote.GET("", r.repos.Vote.Vote)

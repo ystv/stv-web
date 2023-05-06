@@ -6,17 +6,19 @@ import (
 )
 
 type Repos struct {
-	Admin  *AdminRepo
-	Home   *HomeRepo
-	Public *PublicRepo
-	Vote   *VoteRepo
+	Admin        *AdminRepo
+	Home         *HomeRepo
+	Public       *PublicRepo
+	Registration *RegistrationRepo
+	Vote         *VoteRepo
 }
 
 func NewRepos(controller Controller, mailer *utils.Mailer, store *store.Store) *Repos {
 	return &Repos{
-		Admin:  NewAdminRepo(controller, mailer, store),
-		Home:   NewHomeRepo(controller),
-		Public: NewPublicRepo(controller),
-		Vote:   NewVoteRepo(controller, store),
+		Admin:        NewAdminRepo(controller, mailer, store),
+		Home:         NewHomeRepo(controller),
+		Public:       NewPublicRepo(controller),
+		Registration: NewRegistrationRepo(controller, store),
+		Vote:         NewVoteRepo(controller, store),
 	}
 }

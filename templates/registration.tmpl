@@ -1,0 +1,58 @@
+{{define "title"}}YSTV Elections - Registration{{end}}
+{{define "content"}}
+    <div class="container">
+        <div class="card prevent-select">
+            <div class="card-content">
+                <p>Please enter your name and email to be registered.<br>
+                Your name nor email will be visible with your ballots, this is an anonymous system.</p>
+                <br>
+                <form id="register" action="/registration" method="post" style="max-width: 500px">
+                    <div class="field">
+                        <label class="label">Name</label>
+                        <div class="control">
+                            <input class="input" type="text" id="name" name="name" placeholder="Enter your name" value="">
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">Email</label>
+                        <div class="control">
+                            <input class="input" type="email" placeholder="Enter your email" id="email" name="email"
+                                   onkeyup="ValidateEmail()" value="">
+                        </div>
+                        <p class="help is-danger" id="emailAlert"></p>
+                    </div>
+                    <button class="button is-link" onclick="submitNewVoter()">Register</button>
+                </form>
+            </div>
+        </div>
+        <br><br><br>
+        <script>
+            let valid = false;
+
+            function submitNewVoter() {
+                if (valid) {
+                    $('#register').submit();
+                }
+            }
+
+            function ValidateEmail() {
+                const validRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/;
+                if ($("#email").val().match(validRegex)) {
+                    $("#emailAlert").removeClass("is-danger");
+                    $("#emailAlert").addClass("is-success");
+                    $("#email").removeClass("is-danger");
+                    $("#email").addClass("is-success");
+                    $("#emailAlert").innerText = "This email is valid";
+                    valid = true;
+                } else {
+                    $("#emailAlert").removeClass("is-success");
+                    $("#emailAlert").addClass("is-danger");
+                    $("#email").removeClass("is-success");
+                    $("#email").addClass("is-danger");
+                    $("#emailAlert").innerText = "This email is invalid";
+                    valid = false;
+                }
+            }
+        </script>
+    </div>
+{{end}}
