@@ -41,7 +41,7 @@
                         <tr>
                             <td>{{.Name}}</td>
                             <td>{{.Email}}</td>
-                            <td><a onclick="removeVoterModal('{{.Email}}', '{{.Name}}')">Remove</a></td>
+                            <td><a class="button is-danger" onclick="removeVoterModal('{{.Email}}', '{{.Name}}')">Remove</a></td>
                         </tr>
                     {{end}}
                     </tbody>
@@ -53,12 +53,27 @@
                     </tr>
                     </tfoot>
                 </table>
-                <br>
-                <br>
+            </div>
+        </div>
+        <br>
+        <br>
+        <div class="card prevent-select">
+            <div class="card-content">
+                <p>The current status of the registration page is {{if .PageData.AllowRegistration}}enabled{{else}}disabled{{end}}!<br>
+                Press the button below to change this.</p><br>
+                <form id="registrationToggleForm" action="/admin/voters/registration" method="post">
+                    <a class="button is-link" onclick="toggleRegistration()">Toggle Registration</a>
+                </form>
+            </div>
+        </div>
+        <br>
+        <br>
+        <div class="card prevent-select">
+            <div class="card-content">
                 <p>Enter the name and the email of the voter, they will be emailed a link of an election when one
                     opens.</p>
                 <br>
-                <form id="addVoter" style="max-width: 500px">
+                <form id="addVoter" action="/admin/voters" method="post" style="max-width: 500px">
                     <div class="field">
                         <label class="label">Name</label>
                         <div class="control">
@@ -75,91 +90,81 @@
                     </div>
                     <button class="button is-link" onclick="submitNewVoter()">Add voter</button>
                 </form>
-                <br><br><br>
-                <div id="removeVoterModal" class="modal">
-                    <div class="modal-background"></div>
-                    <div class="modal-content">
-                        <div class="box">
-                            <article class="media">
-                                <div class="media-content">
-                                    <div class="content">
-                                        <p class="title" id="voterModalTitle"></p>
-                                        <p><strong>This action cannot be undone</strong><br></p>
-                                        <button class="button is-danger" onclick="removeVoter()">Remove</button>
-                                    </div>
-                                </div>
-                            </article>
-                        </div>
-                    </div>
-                    <button class="modal-close is-large" aria-label="close"></button>
-                </div>
-                <script>
-                    document.querySelectorAll(
-                        ".modal-background, .modal-close,.modal-card-head .delete, .modal-card-foot .button"
-                    ).forEach(($el) => {
-                        const $modal = $el.closest(".modal");
-                        $el.addEventListener("click", () => {
-                            $modal.classList.remove("is-active");
-                        });
-                    });
-
-                    let valid = false;
-
-                    function submitNewVoter() {
-                        if (valid) {
-                            $.ajax({
-                                url: '/admin/voters',
-                                type: 'put',
-                                dataType: 'text',
-                                contentType: 'application/x-www-form-urlencoded',
-                                data: $("#addVoter").serialize(),
-                                success: function (data) {
-                                    location.reload();
-                                }
-                            })
-                        }
-                    }
-
-                    let email = "";
-
-                    function removeVoterModal(email1, name) {
-                        email = email1
-                        document.getElementById("removeVoterModal").classList.add("is-active");
-                        document.getElementById("voterModalTitle").innerHTML = "Are you sure you want to remove (" + name + ")";
-                    }
-
-                    function removeVoter() {
-                        $.ajax({
-                            url: '/admin/voters' + '?' + $.param({"email": email}),
-                            type: 'delete',
-                            dataType: 'text',
-                            contentType: 'application/x-www-form-urlencoded',
-                            success: function (data) {
-                                location.reload();
-                            }
-                        })
-                    }
-
-                    function ValidateEmail() {
-                        const validRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/;
-                        if ($("#email").val().match(validRegex)) {
-                            $("#emailAlert").removeClass("is-danger");
-                            $("#emailAlert").addClass("is-success");
-                            $("#email").removeClass("is-danger");
-                            $("#email").addClass("is-success");
-                            $("#emailAlert").innerText = "This email is valid";
-                            valid = true;
-                        } else {
-                            $("#emailAlert").removeClass("is-success");
-                            $("#emailAlert").addClass("is-danger");
-                            $("#email").removeClass("is-success");
-                            $("#email").addClass("is-danger");
-                            $("#emailAlert").innerText = "This email is invalid";
-                            valid = false;
-                        }
-                    }
-                </script>
             </div>
         </div>
+        <br><br><br>
+        <div id="removeVoterModal" class="modal">
+            <div class="modal-background"></div>
+            <div class="modal-content">
+                <div class="box">
+                    <article class="media">
+                        <div class="media-content">
+                            <div class="content">
+                                <p class="title" id="voterModalTitle"></p>
+                                <p><strong>This action cannot be undone</strong><br></p>
+                                <form id="removeVoterForm" method="post">
+                                    <button class="button is-danger" onclick="removeVoter()">Remove</button>
+                                </form>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </div>
+            <button class="modal-close is-large" aria-label="close"></button>
+        </div>
+        <script>
+            document.querySelectorAll(
+                ".modal-background, .modal-close,.modal-card-head .delete, .modal-card-foot .button"
+            ).forEach(($el) => {
+                const $modal = $el.closest(".modal");
+                $el.addEventListener("click", () => {
+                    $modal.classList.remove("is-active");
+                });
+            });
+
+            function toggleRegistration() {
+                document.getElementById("registrationToggleForm").submit();
+            }
+
+            let valid = false;
+
+            function submitNewVoter() {
+                if (valid) {
+                    $('#addVoter').submit();
+                }
+            }
+
+            let email = "";
+
+            function removeVoterModal(email1, name) {
+                email = email1
+                document.getElementById("removeVoterModal").classList.add("is-active");
+                document.getElementById("voterModalTitle").innerHTML = "Are you sure you want to remove (" + name + ")";
+            }
+
+            function removeVoter() {
+                document.getElementById("removeVoterForm").action = '/admin/voters/delete' + '?' + $.param({"email": email});
+                $('#removeVoterForm').submit();
+            }
+
+            function ValidateEmail() {
+                const validRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/;
+                if ($("#email").val().match(validRegex)) {
+                    $("#emailAlert").removeClass("is-danger");
+                    $("#emailAlert").addClass("is-success");
+                    $("#email").removeClass("is-danger");
+                    $("#email").addClass("is-success");
+                    $("#emailAlert").innerText = "This email is valid";
+                    valid = true;
+                } else {
+                    $("#emailAlert").removeClass("is-success");
+                    $("#emailAlert").addClass("is-danger");
+                    $("#email").removeClass("is-success");
+                    $("#email").addClass("is-danger");
+                    $("#emailAlert").innerText = "This email is invalid";
+                    valid = false;
+                }
+            }
+        </script>
     </div>
 {{end}}
