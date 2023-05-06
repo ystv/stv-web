@@ -89,7 +89,7 @@ func (r *Router) loadRoutes() {
 					return false, fmt.Errorf("error binding to server: invalid credentials")
 				}
 
-				status1, err := auth.Authenticate(config, username, "Password123")
+				status1, err := auth.Authenticate(config, username, password)
 				if err != nil {
 					return false, fmt.Errorf("unable to authenticate %s with error: %w", username, err)
 				}
@@ -116,7 +116,7 @@ func (r *Router) loadRoutes() {
 					for _, group := range dnGroups {
 						if group == "CN=STV Admin,CN=Users,DC=ystv,DC=local" {
 							stv = true
-							return false, fmt.Errorf("STV allowed for %s!\n", username)
+							return true, nil
 						}
 					}
 
