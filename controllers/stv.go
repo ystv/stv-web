@@ -16,7 +16,7 @@ type Repos struct {
 func NewRepos(controller Controller, mailer *utils.Mailer, store *store.Store) *Repos {
 	return &Repos{
 		Admin:        NewAdminRepo(controller, mailer, store),
-		Home:         NewHomeRepo(controller),
+		Home:         NewHomeRepo(controller, store),
 		Public:       NewPublicRepo(controller),
 		Registration: NewRegistrationRepo(controller, store),
 		Vote:         NewVoteRepo(controller, store),
