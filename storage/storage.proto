@@ -8,6 +8,7 @@ message STV {
     repeated Election elections = 3;
     repeated URL urls = 4;
     repeated Voter voters = 5;
+    bool allowRegistration = 6;
 }
 
 message Ballot {
