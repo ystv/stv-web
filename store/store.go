@@ -528,19 +528,19 @@ func (store *Store) FindVoter(email string) (*storage.Voter, error) {
 func (store *Store) AddVoter(voter *storage.Voter) (*storage.Voter, error) {
 	stv, err := store.Get()
 	if err != nil {
-		return nil, err
+		return &storage.Voter{}, err
 	}
 
 	for _, v := range stv.Voters {
 		if v.Email == voter.Email {
-			return nil, fmt.Errorf("unable to add voter duplicate email for AddVoter")
+			return &storage.Voter{}, fmt.Errorf("unable to add voter duplicate email for AddVoter")
 		}
 	}
 
 	stv.Voters = append(stv.Voters, voter)
 
 	if err = store.backend.Write(stv); err != nil {
-		return nil, err
+		return &storage.Voter{}, err
 	}
 
 	return voter, nil
