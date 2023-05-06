@@ -148,5 +148,10 @@ func (r *VoteRepo) AddVote(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+
+	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, nil, "voted.tmpl")
+	if err != nil {
+		return err
+	}
 	return nil
 }
