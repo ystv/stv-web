@@ -134,22 +134,23 @@ func (r *Router) loadRoutes() {
 		election := admin.Group("/election")
 		{
 			election.GET("/:id", r.repos.Admin.Election)
-			election.PUT("", r.repos.Admin.AddElection)
-			election.PATCH("/:id", r.repos.Admin.EditElection)
-			election.PATCH("/open/:id", r.repos.Admin.OpenElection)
-			election.PATCH("/close/:id", r.repos.Admin.CloseElection)
-			election.DELETE("", r.repos.Admin.DeleteElection)
+			election.POST("", r.repos.Admin.AddElection)
+			election.POST("/edit/:id", r.repos.Admin.EditElection)
+			election.POST("/open/:id", r.repos.Admin.OpenElection)
+			election.POST("/close/:id", r.repos.Admin.CloseElection)
+			election.POST("/delete/:id", r.repos.Admin.DeleteElection)
 			candidates := election.Group("/candidate")
 			{
-				candidates.PUT("/:id", r.repos.Admin.AddCandidate)
-				candidates.DELETE("", r.repos.Admin.DeleteCandidate)
+				candidates.POST("/:id", r.repos.Admin.AddCandidate)
+				candidates.POST("/delete/:id", r.repos.Admin.DeleteCandidate)
 			}
 		}
 		voters := admin.Group("/voters")
 		{
 			voters.GET("", r.repos.Admin.Voters)
-			voters.PUT("", r.repos.Admin.AddVoter)
-			voters.DELETE("", r.repos.Admin.DeleteVoter)
+			voters.POST("", r.repos.Admin.AddVoter)
+			voters.POST("/delete", r.repos.Admin.DeleteVoter)
+			voters.POST("/registration", r.repos.Admin.SwitchRegistration)
 		}
 	}
 
@@ -163,7 +164,7 @@ func (r *Router) loadRoutes() {
 	vote := r.router.Group("/vote/:url")
 	{
 		vote.GET("", r.repos.Vote.Vote)
-		vote.PUT("", r.repos.Vote.AddVote)
+		vote.POST("", r.repos.Vote.AddVote)
 	}
 
 	r.router.GET("/public/:file", r.repos.Public.Public)
