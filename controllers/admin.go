@@ -10,6 +10,7 @@ import (
 	"github.com/ystv/stv_web/voting"
 	"html/template"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -30,7 +31,7 @@ func NewAdminRepo(controller Controller, mailer *utils.Mailer, store *store.Stor
 func (r *AdminRepo) Admin(c echo.Context) error {
 	elections, err := r.store.GetElections()
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	total := len(elections)
 	toBeOpened := 0
@@ -49,6 +50,9 @@ func (r *AdminRepo) Admin(c echo.Context) error {
 		}
 	}
 	temp, err := r.store.GetVoters()
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
 	voters := len(temp)
 	data := struct {
 		Elections struct {
@@ -77,7 +81,7 @@ func (r *AdminRepo) Admin(c echo.Context) error {
 	}
 	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, data, "admin.tmpl")
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	return nil
 }
@@ -85,45 +89,45 @@ func (r *AdminRepo) Admin(c echo.Context) error {
 func (r *AdminRepo) AddCandidate(c echo.Context) error {
 	err := c.Request().ParseForm()
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	temp := c.Param("id")
 	temp1 := []rune(temp)
 	for _, r2 := range temp1 {
 		if !unicode.IsNumber(r2) {
-			return fmt.Errorf("id expects a positive number, the provided is not a positive number")
+			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
 		}
 	}
 	id, err := strconv.ParseUint(temp, 10, 64)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 
 	name := c.Request().FormValue("name")
 
 	if len(name) == 0 {
-		return fmt.Errorf("name cannot be empty")
+		return r.errorHandle(c, fmt.Errorf("name cannot be empty"))
 	}
 
 	election, err := r.store.FindElection(id)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	if election.Open {
-		return fmt.Errorf("cannot add candidate to open election")
+		return r.errorHandle(c, fmt.Errorf("cannot add candidate to open election"))
 	}
 	if election.Closed {
-		return fmt.Errorf("cannot add candidate to closed election")
+		return r.errorHandle(c, fmt.Errorf("cannot add candidate to closed election"))
 	}
 
 	candidates, err := r.store.GetCandidatesElectionId(id)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 
 	for _, candidate := range candidates {
 		if candidate.Name == name {
-			return fmt.Errorf("cannot have duplicate candidate")
+			return r.errorHandle(c, fmt.Errorf("cannot have duplicate candidate"))
 		}
 	}
 
@@ -135,47 +139,47 @@ func (r *AdminRepo) AddCandidate(c echo.Context) error {
 
 	_, err = r.store.AddCandidate(candidate)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
-	return nil
+	return r.Election(c)
 }
 
 func (r *AdminRepo) DeleteCandidate(c echo.Context) error {
 	err := c.Request().ParseForm()
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
-	id := c.Request().FormValue("id")
+	id := c.Param("id")
 	if len(id) == 0 {
-		return fmt.Errorf("cannot delete invalid id")
+		return r.errorHandle(c, fmt.Errorf("cannot delete invalid id"))
 	}
 	candidate, err := r.store.FindCandidate(id)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	election, err := r.store.FindElection(candidate.Election)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	if election.Open || election.Closed {
-		return fmt.Errorf("cannot delete candidate of open or closed election")
+		return r.errorHandle(c, fmt.Errorf("cannot delete candidate of open or closed election"))
 	}
 	err = r.store.DeleteCandidate(id)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
-	return nil
+	return r.election(c, election.Id)
 }
 
 func (r *AdminRepo) Elections(c echo.Context) error {
 	stv, err := r.store.Get()
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	var err1 string
 	err = c.Request().ParseForm()
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	if len(c.Request().FormValue("error")) > 0 {
 		err1 = c.Request().FormValue("error")
@@ -190,7 +194,7 @@ func (r *AdminRepo) Elections(c echo.Context) error {
 	}
 	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, data, "elections.tmpl")
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	return nil
 }
@@ -200,16 +204,16 @@ func (r *AdminRepo) Election(c echo.Context) error {
 	temp1 := []rune(temp)
 	for _, r2 := range temp1 {
 		if !unicode.IsNumber(r2) {
-			return fmt.Errorf("id expects a positive number, the provided is not a positive number")
+			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
 		}
 	}
 	id, err := strconv.ParseUint(temp, 10, 64)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	election, err := r.store.FindElection(id)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	var err1 string
 	if len(c.Request().FormValue("error")) > 0 {
@@ -217,26 +221,28 @@ func (r *AdminRepo) Election(c echo.Context) error {
 	}
 	candidates, err := r.store.GetCandidatesElectionId(id)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
-	if len(election.Result) > 0 && election.Result != "R.O.N." {
-		candidate, err := r.store.FindCandidate(election.Result)
-		if err != nil {
-			return err
+	if election.Result != nil {
+		if len(election.Result.Winner) > 0 && election.Result.Winner != "R.O.N." {
+			candidate, err := r.store.FindCandidate(election.Result.Winner)
+			if err != nil {
+				return r.errorHandle(c, err)
+			}
+			election.Result.Winner = candidate.Name
 		}
-		election.Result = candidate.Name
 	}
 	noOfBallots := 0
 	if election.Open || election.Closed {
 		ballots, err := r.store.GetBallotsElectionId(election.Id)
 		if err != nil {
-			return err
+			return r.errorHandle(c, err)
 		}
 		noOfBallots = len(ballots)
 	}
 	voters, err := r.store.GetVoters()
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	noOfVoters := len(voters)
 	data := struct {
@@ -254,7 +260,60 @@ func (r *AdminRepo) Election(c echo.Context) error {
 	}
 	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, data, "election.tmpl")
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
+	}
+	return nil
+}
+
+func (r *AdminRepo) election(c echo.Context, id uint64) error {
+	election, err := r.store.FindElection(id)
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+	var err1 string
+	if len(c.Request().FormValue("error")) > 0 {
+		err1 = c.Request().FormValue("error")
+	}
+	candidates, err := r.store.GetCandidatesElectionId(id)
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+	if len(election.Result.Winner) > 0 && election.Result.Winner != "R.O.N." {
+		candidate, err := r.store.FindCandidate(election.Result.Winner)
+		if err != nil {
+			return r.errorHandle(c, err)
+		}
+		election.Result.Winner = candidate.Name
+	}
+	noOfBallots := 0
+	if election.Open || election.Closed {
+		ballots, err := r.store.GetBallotsElectionId(election.Id)
+		if err != nil {
+			return r.errorHandle(c, err)
+		}
+		noOfBallots = len(ballots)
+	}
+	voters, err := r.store.GetVoters()
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+	noOfVoters := len(voters)
+	data := struct {
+		Election   *storage.Election
+		Candidates []*storage.Candidate
+		Ballots    int
+		Voters     int
+		Error      string
+	}{
+		Election:   election,
+		Candidates: candidates,
+		Ballots:    noOfBallots,
+		Voters:     noOfVoters,
+		Error:      err1,
+	}
+	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, data, "election.tmpl")
+	if err != nil {
+		return r.errorHandle(c, err)
 	}
 	return nil
 }
@@ -262,7 +321,7 @@ func (r *AdminRepo) Election(c echo.Context) error {
 func (r *AdminRepo) AddElection(c echo.Context) error {
 	err := c.Request().ParseForm()
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	name := c.Request().FormValue("name")
 	description := c.Request().FormValue("description")
@@ -272,11 +331,7 @@ func (r *AdminRepo) AddElection(c echo.Context) error {
 		ron = true
 	}
 	if len(name) <= 0 || len(description) <= 0 {
-		c.Request().Form.Add("error", "Name and Description need to be filled")
-		err = r.Elections(c)
-		if err != nil {
-			return err
-		}
+		return r.errorHandle(c, fmt.Errorf("name and description need to be filled"))
 	}
 	election := &storage.Election{
 		Name:        name,
@@ -286,32 +341,26 @@ func (r *AdminRepo) AddElection(c echo.Context) error {
 
 	e1, err := r.store.AddElection(election)
 	if err != nil && e1 == nil {
-		return err
+		return r.errorHandle(c, err)
 	}
-
-	err = r.Elections(c)
-	if err != nil {
-		return err
-	}
-	return nil
+	return r.Elections(c)
 }
 
 func (r *AdminRepo) EditElection(c echo.Context) error {
 	err := c.Request().ParseForm()
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
-
 	temp := c.Param("id")
 	temp1 := []rune(temp)
 	for _, r2 := range temp1 {
 		if !unicode.IsNumber(r2) {
-			return fmt.Errorf("id expects a positive number, the provided is not a positive number")
+			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
 		}
 	}
 	id, err := strconv.ParseUint(temp, 10, 64)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 
 	name := c.Request().FormValue("name1")
@@ -322,11 +371,7 @@ func (r *AdminRepo) EditElection(c echo.Context) error {
 		ron = true
 	}
 	if len(name) <= 0 || len(description) <= 0 {
-		c.Request().Form.Add("error", "Name and Description need to be filled")
-		err = r.Elections(c)
-		if err != nil {
-			return err
-		}
+		return r.errorHandle(c, fmt.Errorf("name and description need to be filled"))
 	}
 	election := &storage.Election{
 		Id:          id,
@@ -337,14 +382,12 @@ func (r *AdminRepo) EditElection(c echo.Context) error {
 
 	e1, err := r.store.EditElection(election)
 	if err != nil && e1 == nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 
-	err = r.Elections(c)
-	if err != nil {
-		return err
-	}
-	return nil
+	strings.ReplaceAll(c.Request().URL.Path, "/edit", "")
+
+	return r.Election(c)
 }
 
 func (r *AdminRepo) OpenElection(c echo.Context) error {
@@ -352,37 +395,37 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 	temp1 := []rune(temp)
 	for _, r2 := range temp1 {
 		if !unicode.IsNumber(r2) {
-			return fmt.Errorf("id expects a positive number, the provided is not a positive number")
+			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
 		}
 	}
 	id, err := strconv.ParseUint(temp, 10, 64)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 
 	election, err := r.store.FindElection(id)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	if election.Open {
-		return fmt.Errorf("cannot open election that is already open")
+		return r.errorHandle(c, fmt.Errorf("cannot open election that is already open"))
 	}
 	if election.Closed {
-		return fmt.Errorf("cannot reopen election that has been closed")
+		return r.errorHandle(c, fmt.Errorf("cannot reopen election that has been closed"))
 	}
 
 	candidates, err := r.store.GetCandidatesElectionId(id)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 
 	if len(candidates) == 0 {
-		return fmt.Errorf("cannot open election with no candidates")
+		return r.errorHandle(c, fmt.Errorf("cannot open election with no candidates"))
 	}
 
 	err = r.store.OpenElection(id)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 
 	emailTemplate := template.New("email.tmpl")
@@ -400,7 +443,7 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 
 		_, err = r.store.AddURL(url)
 		if err != nil {
-			return err
+			return r.errorHandle(c, err)
 		}
 
 		file := utils.Mail{
@@ -436,10 +479,13 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 
 		err = r.mailer.SendMail(file)
 		if err != nil {
-			fmt.Println(err)
+			return r.errorHandle(c, err)
 		}
 	}
-	return nil
+
+	strings.ReplaceAll(c.Request().URL.Path, "/open", "")
+
+	return r.Election(c)
 }
 
 func (r *AdminRepo) CloseElection(c echo.Context) error {
@@ -447,28 +493,28 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 	temp1 := []rune(temp)
 	for _, r2 := range temp1 {
 		if !unicode.IsNumber(r2) {
-			return fmt.Errorf("id expects a positive number, the provided is not a positive number")
+			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
 		}
 	}
 	id, err := strconv.ParseUint(temp, 10, 64)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 
 	election, err := r.store.FindElection(id)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	if !election.Open {
-		return fmt.Errorf("cannot close election that is not open")
+		return r.errorHandle(c, fmt.Errorf("cannot close election that is not open"))
 	}
 	if election.Closed {
-		return fmt.Errorf("cannot reclose election that has been closed")
+		return r.errorHandle(c, fmt.Errorf("cannot reclose election that has been closed"))
 	}
 
 	ballots, err := r.store.GetBallotsElectionId(id)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 
 	ron := &voting.Candidate{Name: "R.O.N."}
@@ -480,7 +526,7 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 
 	candidatesStore, err := r.store.GetCandidatesElectionId(id)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 
 	for _, c1 := range candidatesStore {
@@ -503,75 +549,109 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 
 	electionResults, err := voting.SingleTransferableVote(candidates, ballotsVoting, 1, voting.DefaultSingleTransferableVoteOptions())
 	if err != nil {
-		return fmt.Errorf("election failed: %v", err)
+		return r.errorHandle(c, fmt.Errorf("election failed: %v", err))
 	}
 
+	//fmt.Println(electionResults)
+
+	result := &storage.Result{}
+
+	//fmt.Println("Rounds:", len(electionResults.Rounds))
+
+	result.Rounds = uint64(len(electionResults.Rounds))
+
+	for i, round := range electionResults.Rounds {
+		rounds := &storage.Round{}
+		rounds.Round = uint64(i)
+		rounds.Blanks = uint64(round.NumberOfBlankVotes)
+		//fmt.Printf("Round: %d, No. of blank votes: %f\n", i+1, round.NumberOfBlankVotes)
+		//fmt.Println(round.CandidateResults)
+		for j, c := range round.CandidateResults {
+			candidateStatus := &storage.CandidateStatus{}
+			candidateStatus.CandidateRank = uint64(j)
+			candidateStatus.Id = c.Candidate.Name
+			candidateStatus.NoOfVotes = c.NumberOfVotes
+			candidateStatus.Status = string(c.Status)
+			//fmt.Printf("No. %d, Candidate: %s, No. of votes: %f, Status: %s\n", j+1, c.Candidate.Name, c.NumberOfVotes, c.Status)
+			rounds.CandidateStatus = append(rounds.CandidateStatus, candidateStatus)
+		}
+		//fmt.Println()
+		result.Round = append(result.Round, rounds)
+	}
 	winners := electionResults.GetWinners()
+	//fmt.Printf("Winner: %s!", winners[0].Name)
 
 	if len(winners) != 1 {
-		return fmt.Errorf("invalid abount of winners")
+		return r.errorHandle(c, fmt.Errorf("invalid abount of winners"))
 	}
 
-	election.Result = winners[0].Name
+	result.Winner = winners[0].Name
+
+	//winners := electionResults.GetWinners()
+
+	election.Result = result
 
 	election, err = r.store.EditElection(election)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 
 	err = r.store.CloseElection(id)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 
-	return nil
+	strings.ReplaceAll(c.Request().URL.Path, "/close", "")
+
+	return r.Election(c)
 }
 
 func (r *AdminRepo) DeleteElection(c echo.Context) error {
-	err := c.Request().ParseForm()
-	if err != nil {
-		return err
+	temp := c.Param("id")
+	temp1 := []rune(temp)
+	for _, r2 := range temp1 {
+		if !unicode.IsNumber(r2) {
+			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
+		}
 	}
-	temp := c.Request().FormValue("id")
 	id, err := strconv.ParseUint(temp, 10, 64)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
+
 	err = r.store.DeleteElection(id)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
-	err = r.Elections(c)
-	if err != nil {
-		return err
-	}
-	return nil
+	return r.Elections(c)
 }
 
 func (r *AdminRepo) Voters(c echo.Context) error {
 	stv, err := r.store.Get()
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	voters := stv.Voters
 	err = c.Request().ParseForm()
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	var err1 string
 	if len(c.Request().FormValue("error")) > 0 {
 		err1 = c.Request().FormValue("error")
 	}
 	data := struct {
-		Voters []*storage.Voter
-		Error  string
+		Voters            []*storage.Voter
+		AllowRegistration bool
+		Error             string
 	}{
-		Voters: voters,
-		Error:  err1,
+		Voters:            voters,
+		AllowRegistration: stv.AllowRegistration,
+		Error:             err1,
 	}
 	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, data, "voters.tmpl")
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	return nil
 }
@@ -579,35 +659,58 @@ func (r *AdminRepo) Voters(c echo.Context) error {
 func (r *AdminRepo) AddVoter(c echo.Context) error {
 	err := c.Request().ParseForm()
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	email := c.Request().FormValue("email")
 	name := c.Request().FormValue("name")
 	if len(name) <= 0 || len(email) <= 0 {
-		c.Request().Form.Add("error", "Name and Email need to be filled")
-		err = r.Voters(c)
-		if err != nil {
-			return err
-		}
+		return r.errorHandle(c, fmt.Errorf("name and email need to be filled"))
 	}
 	_, err = r.store.AddVoter(&storage.Voter{
 		Email: email,
 		Name:  name,
 	})
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
-	return nil
+	return r.Voters(c)
 }
 
 func (r *AdminRepo) DeleteVoter(c echo.Context) error {
 	err := c.Request().ParseForm()
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
 	email := c.Request().FormValue("email")
 	err = r.store.DeleteVoter(email)
 	if err != nil {
+		return r.errorHandle(c, err)
+	}
+	return r.Voters(c)
+}
+
+func (r *AdminRepo) SwitchRegistration(c echo.Context) error {
+	allow, err := r.store.GetAllowRegistration()
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+	allow, err = r.store.SetAllowRegistration(!allow)
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+	return r.Voters(c)
+}
+
+func (r *AdminRepo) errorHandle(c echo.Context, err error) error {
+	data := struct {
+		Error string
+	}{
+		Error: err.Error(),
+	}
+	fmt.Println(data.Error)
+	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, data, "errors.tmpl")
+	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 	return nil
