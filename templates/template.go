@@ -20,19 +20,10 @@ type Templater struct {
 	dashboard *template.Template
 }
 
-var (
-	funcs = template.FuncMap{
-		"cleantime": cleanTime,
-	}
-	BaseTemplates = []string{
-		"_base.tmpl",
-		"_top.tmpl",
-		"_footer.tmpl",
-	}
-)
-
-func cleanTime(t time.Time) string {
-	return t.Format(time.RFC1123Z)
+var BaseTemplates = []string{
+	"_base.tmpl",
+	"_top.tmpl",
+	"_footer.tmpl",
 }
 
 func (t *Templater) Page(w io.Writer, p structs.PageParams) error {
@@ -76,7 +67,7 @@ func (t *Templater) RenderTemplate(w io.Writer, context structs.PageParams, data
 				{"Sec", seconds},
 			}
 
-			parts := []string{}
+			var parts []string
 
 			for _, s := range segments {
 				if s.value == 0 {
@@ -114,6 +105,9 @@ func (t *Templater) RenderTemplate(w io.Writer, context structs.PageParams, data
 		},
 		"even": func(a int) bool {
 			return a%2 == 0
+		},
+		"incUInt64": func(a uint64) uint64 {
+			return a + 1
 		},
 	})
 	t1, err = t1.ParseFiles(tmpls...)
