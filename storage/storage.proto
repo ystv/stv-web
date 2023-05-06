@@ -31,7 +31,26 @@ message Election {
     bool ron = 4;
     bool open = 5;
     bool closed = 6;
-    string result = 7;
+    Result result = 7;
+}
+
+message Result {
+    uint64 rounds = 1;
+    string winner = 2;
+    repeated Round round = 3;
+}
+
+message Round {
+    uint64 round = 1;
+    uint64 blanks = 2;
+    repeated CandidateStatus candidateStatus = 3;
+}
+
+message CandidateStatus {
+    uint64 candidateRank = 1;
+    string id = 2;
+    double noOfVotes = 3;
+    string status = 4;
 }
 
 message URL {

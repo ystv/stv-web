@@ -261,6 +261,7 @@ func (store *Store) EditElection(election *storage.Election) (*storage.Election,
 			e.Ron = election.Ron
 			e.Open = election.Open
 			e.Closed = election.Closed
+			e.Result = election.Result
 			if err = store.backend.Write(stv); err != nil {
 				return nil, err
 			}
@@ -478,6 +479,29 @@ func (store *Store) DeleteURL(url string) error {
 	}
 
 	return nil
+}
+
+func (store *Store) GetAllowRegistration() (bool, error) {
+	stv, err := store.Get()
+	if err != nil {
+		return false, err
+	}
+	return stv.AllowRegistration, err
+}
+
+func (store *Store) SetAllowRegistration(allow bool) (bool, error) {
+	stv, err := store.Get()
+	if err != nil {
+		return false, err
+	}
+
+	stv.AllowRegistration = allow
+
+	if err = store.backend.Write(stv); err != nil {
+		return false, err
+	}
+
+	return allow, nil
 }
 
 func (store *Store) GetVoters() ([]*storage.Voter, error) {
