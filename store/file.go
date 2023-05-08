@@ -31,7 +31,16 @@ func NewFileBackend() (Backend, error) {
 	// persist state
 	err = fb.save(state)
 	if err != nil {
-		return nil, err
+		fb = &FileBackend{path: "/db/store.db"}
+		state, err = fb.read()
+		if err != nil {
+			return nil, err
+		}
+
+		err = fb.save(state)
+		if err != nil {
+			return nil, err
+		}
 	}
 	fb.cache = state
 	return fb, nil
