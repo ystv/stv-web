@@ -18,14 +18,14 @@ import (
 func main() {
 	var err error
 
-	file, err := os.ReadFile("/db/db.store")
+	file, err := os.ReadFile("/db/store.db")
 	if err != nil {
 		fmt.Println(err)
 	} else {
 		fmt.Println(string(file))
 	}
 
-	file, err = os.ReadFile("./db/db.store")
+	file, err = os.ReadFile("./db/store.db")
 	if err != nil {
 		fmt.Println(err)
 	} else {
