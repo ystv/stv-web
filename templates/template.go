@@ -6,7 +6,6 @@ import (
 	"github.com/ystv/stv_web/structs"
 	"html/template"
 	"io"
-	"path/filepath"
 	"strings"
 	"time"
 )
@@ -44,8 +43,7 @@ func (t *Templater) RenderTemplate(w io.Writer, data interface{}, mainTmpl Templ
 	var err error
 
 	td := structs.Globals{
-		PageParams: context,
-		PageData:   data,
+		PageData: data,
 	}
 
 	t1 := template.New("_base.tmpl")
@@ -95,17 +93,8 @@ func (t *Templater) RenderTemplate(w io.Writer, data interface{}, mainTmpl Templ
 		"add": func(a, b int) int {
 			return a + b
 		},
-		"mul": func(a, b int) int {
-			return a * b
-		},
-		"div": func(a, b int) int {
-			return a / b
-		},
 		"inc": func(a int) int {
 			return a + 1
-		},
-		"even": func(a int) bool {
-			return a%2 == 0
 		},
 		"incUInt64": func(a uint64) uint64 {
 			return a + 1
