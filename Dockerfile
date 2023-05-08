@@ -13,7 +13,7 @@ COPY go.sum ./
 COPY . ./
 RUN go mod download
 
-RUN apk update && apk add git && apk add make && apk add protoc
+RUN apk update && apk add git && apk add make && apk add protoc && apk add protoc-gen-go
 
 COPY *.go ./
 
