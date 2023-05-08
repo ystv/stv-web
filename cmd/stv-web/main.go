@@ -19,7 +19,7 @@ func main() {
 	var err error
 
 	config := &structs.Config{}
-	_, err = toml.DecodeFile("config.toml", config)
+	_, err = toml.DecodeFile("./toml/config.toml", config)
 	if err != nil {
 		log.Fatal(err)
 	}

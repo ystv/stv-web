@@ -32,6 +32,7 @@ message Election {
     bool open = 5;
     bool closed = 6;
     Result result = 7;
+    repeated Voter excluded = 8;
 }
 
 message Result {

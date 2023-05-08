@@ -262,6 +262,7 @@ func (store *Store) EditElection(election *storage.Election) (*storage.Election,
 			e.Open = election.Open
 			e.Closed = election.Closed
 			e.Result = election.Result
+			e.Excluded = election.Excluded
 			if err = store.backend.Write(stv); err != nil {
 				return nil, err
 			}

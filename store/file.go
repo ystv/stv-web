@@ -20,7 +20,7 @@ type FileBackend struct {
 }
 
 func NewFileBackend() (Backend, error) {
-	fb := &FileBackend{path: "store.db"}
+	fb := &FileBackend{path: "./db/store.db"}
 	state, err := fb.read()
 	if err != nil {
 		return nil, err

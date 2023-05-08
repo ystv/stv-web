@@ -16,7 +16,7 @@
                     Remove Election:<br><a class="button is-danger" onclick="removeElectionModal()">Remove Election</a>
                 {{else if and .Open (not .Closed)}}
                     Current ballots (click the button below to refresh): {{$.PageData.Ballots}}/{{$.PageData.Voters}}<br>
-                    <a class="button" href="{{$.PageData.URL}}">Refresh</a><br><br>
+                    <a class="button" href="/admin/election/{{.Id}}">Refresh</a><br><br>
                     Current state: Open<br><br>
                     Next action to take: <a class="button is-danger" onclick="closeElectionModal()">Close election</a>
                 {{else if and (not .Open) .Closed}}
@@ -93,8 +93,12 @@
                     <p>Remove Election:<br><a class="button is-danger" onclick="removeElectionModal()">Remove Election</a>
                 {{end}}
                 </p>
-                <br>
-                <br>
+            </div>
+        </div>
+        <br>
+        <br>
+        <div class="card">
+            <div class="card-content">
                 <p>Below is a list of the candidates taking part in the
                     election{{if and (not .Open) (not .Closed)}}, use form below to add another candidate{{end}}.</p>
                 <br>
@@ -136,10 +140,9 @@
                         </tr>
                     </tfoot>
                 </table>
-                <br>
-                <br>
-                {{with .PageData.Election}}
-                {{if and (not .Open) (not .Closed)}}
+        {{with .PageData.Election}}
+            {{if and (not .Open) (not .Closed)}}
+                <br><br>
                     <p>Enter the name of the candidate.</p>
                     <br>
                     <form id="addCandidate" action="/admin/election/candidate/{{.Id}}" method="post"
@@ -151,12 +154,74 @@
                                        value="">
                             </div>
                         </div>
-                        <button class="button is-link" onclick="submitNewCandidate()">Add candidate</button>
+                        <a class="button is-link" onclick="submitNewCandidate()">Add candidate</a>
                     </form>
-                    {{end}}
+                {{end}}
             </div>
-        </div><br><br><br>
-        {{if and (not .Open) (not .Closed)}}
+        </div>
+        <br>
+        <br>
+        <div class="card">
+            <div class="card-content">
+                <p>Below is the list of excluded voters from this election, use this in order to exclude candidates from running.<br>
+                This is manual in case of pairs running.</p>
+                <br><br>
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Voter</th>
+                        <th>Email</th>
+                        {{if and (not .Open) (not .Closed)}}
+                        <th>Include again</th>
+                        {{end}}
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {{range .Excluded}}
+                        <tr>
+                            <td>{{.Name}}</td>
+                            <td>{{.Email}}</td>
+                            {{if and (not $.PageData.Election.Open) (not $.PageData.Election.Closed)}}
+                            <td><form id="includeForm" action="/admin/election/include/{{$.PageData.Election.Id}}/{{.Email}}" method="post">
+                            <a class="button is-warning" onclick="includeVoter()">Include again</a></form></td>
+                            {{end}}
+                        </tr>
+                    {{end}}
+                    </tbody>
+                    <tfoot>
+                    <tr>
+                        <th>Voter</th>
+                        <th>Email</th>
+                        {{if and (not .Open) (not .Closed)}}
+                        <th>Include again</th>
+                        {{end}}
+                    </tr>
+                    </tfoot>
+                </table>
+                {{if and (not .Open) (not .Closed)}}
+                <br>
+                <br>
+                <form id="excludeForm" action="/admin/election/exclude/{{.Id}}" method="post"
+                      style="max-width: 500px">
+                    <div class="field">
+                        <label class="label" for="excludeDropDown">Use the drop-down to select the user to exclude from this election.</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="excludeDropDown" name="email" form="excludeForm">
+                                    <option value="" disabled selected>Please select</option>
+                                    {{range $.PageData.VotersList}}
+                                        <option value="{{.Email}}">{{.Name}} <{{.Email}}></option>
+                                    {{end}}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <a class="button is-link" onclick="submitNewExclude()">Exclude voter</a>
+                </form>
+                </div>
+            </div>
+            <br>
+            <br>
             <div id="openModal" class="modal">
                 <div class="modal-background"></div>
                 <div class="modal-content">
@@ -240,7 +305,7 @@
                     </div>
                 </div>
                 <button class="modal-close is-large" aria-label="close"></button>
-            </div>{{end}}
+            </div>{{else}}</div></div>{{end}}
         {{if and .Open (not .Closed)}}
             <div id="closeModal" class="modal">
                 <div class="modal-background"></div>
@@ -273,7 +338,7 @@
                                 <div class="content">
                                     <p class="title">Are you sure you want to remove ({{.Name}})</p>
                                     <p><strong>This action cannot be undone</strong><br></p>
-                                    <form id="removeVoterForm" action="/admin/election/delete/{{.Id}}" method="post">
+                                    <form id="removeElectionForm" action="/admin/election/delete/{{.Id}}" method="post">
                                         <button class="button is-danger" onclick="removeElection()">Remove</button>
                                     </form>
                                 </div>
@@ -283,6 +348,7 @@
                 </div>
                 <button class="modal-close is-large" aria-label="close"></button>
             </div>{{end}}
+        <br><br><br>
         <script>
             document.querySelectorAll(
                 ".modal-background, .modal-close,.modal-card-head .delete, .modal-card-foot .button"
@@ -301,7 +367,7 @@
 
             function submitEditElection() {
                 if (document.getElementById("name1").value.length > 0 && document.getElementById("description").value.length > 0) {
-                    $('#editElection').submit();
+                    document.getElementById("editElection").submit();
                 }
             }
 
@@ -309,13 +375,23 @@
                 document.getElementById("openModal").classList.add("is-active");
             }
 
+            function includeVoter() {
+                document.getElementById("includeForm").submit();
+            }
+
             function openElection() {
-                $('#openElectionForm').submit();
+                document.getElementById("openElectionForm").submit();
             }
 
             function submitNewCandidate() {
                 if (document.getElementById("name").value.length > 0) {
-                    $('#addCandidate').submit();
+                    document.getElementById("addCandidate").submit();
+                }
+            }
+
+            function submitNewExclude() {
+                if (document.getElementById("excludeDropDown").value.length > 0) {
+                    document.getElementById("excludeForm").submit();
                 }
             }
 
@@ -329,7 +405,7 @@
 
             function removeCandidate() {
                 document.getElementById("removeCandidateForm").action = '/admin/election/candidate/delete/' + candidateId;
-                $('#removeCandidateForm').submit();
+                document.getElementById("removeCandidateForm").submit();
             }
 
             {{end}}
@@ -341,7 +417,7 @@
             }
 
             function closeElection() {
-                $('#closeElectionForm').submit();
+                document.getElementById("closeElectionForm").submit();
             }{{end}}
 
             {{if not .Open}}
@@ -351,7 +427,7 @@
             }
 
             function removeElection() {
-                $('#removeElectionForm').submit();
+                document.getElementById("removeElectionForm").submit();
             }{{end}}
         </script>
         {{end}}

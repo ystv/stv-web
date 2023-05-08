@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"embed"
 	"fmt"
 	"github.com/go-ldap/ldap/v3"
 	"github.com/labstack/echo/v4"
@@ -10,9 +11,13 @@ import (
 	"github.com/ystv/stv_web/middleware"
 	"github.com/ystv/stv_web/structs"
 	"github.com/ystv/stv_web/utils"
+	"io/fs"
 	"net/http"
 	"net/mail"
 )
+
+//go:embed public/*
+var embeddedFiles embed.FS
 
 type (
 	Router struct {
@@ -136,6 +141,8 @@ func (r *Router) loadRoutes() {
 			election.GET("/:id", r.repos.Admin.Election)
 			election.POST("", r.repos.Admin.AddElection)
 			election.POST("/edit/:id", r.repos.Admin.EditElection)
+			election.POST("/exclude/:id", r.repos.Admin.Exclude)
+			election.POST("/include/:id/:email", r.repos.Admin.Include)
 			election.POST("/open/:id", r.repos.Admin.OpenElection)
 			election.POST("/close/:id", r.repos.Admin.CloseElection)
 			election.POST("/delete/:id", r.repos.Admin.DeleteElection)
@@ -167,9 +174,16 @@ func (r *Router) loadRoutes() {
 		vote.POST("", r.repos.Vote.AddVote)
 	}
 
-	r.router.GET("/public/:file", r.repos.Public.Public)
+	assetHandler := http.FileServer(getFileSystem())
 
-	r.router.GET("/public/webfonts/Arial/:file", r.repos.Public.PublicFontArial)
+	r.router.GET("/public/*", echo.WrapHandler(http.StripPrefix("/public/", assetHandler)))
+}
 
-	r.router.GET("/public/webfonts/Allerta/:file", r.repos.Public.PublicFontAllerta)
+func getFileSystem() http.FileSystem {
+	fsys, err := fs.Sub(embeddedFiles, "public")
+	if err != nil {
+		panic(err)
+	}
+
+	return http.FS(fsys)
 }

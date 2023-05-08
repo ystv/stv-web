@@ -9,7 +9,6 @@ import (
 	"github.com/ystv/stv_web/templates"
 	"github.com/ystv/stv_web/utils"
 	"github.com/ystv/stv_web/voting"
-	"html/template"
 	"strconv"
 	"strings"
 	"unicode"
@@ -142,7 +141,7 @@ func (r *AdminRepo) AddCandidate(c echo.Context) error {
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	return r.Election(c)
+	return r.election(c, election.Id)
 }
 
 func (r *AdminRepo) DeleteCandidate(c echo.Context) error {
@@ -252,14 +251,14 @@ func (r *AdminRepo) Election(c echo.Context) error {
 		Ballots    int
 		Voters     int
 		Error      string
-		URL        string
+		VotersList []*storage.Voter
 	}{
 		Election:   election,
 		Candidates: candidates,
 		Ballots:    noOfBallots,
-		Voters:     noOfVoters,
+		Voters:     noOfVoters - len(election.Excluded),
 		Error:      err1,
-		URL:        "https://" + r.controller.DomainName + "/admin/election/" + strconv.FormatUint(election.Id, 10),
+		VotersList: voters,
 	}
 	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.ElectionTemplate)
 	if err != nil {
@@ -281,12 +280,14 @@ func (r *AdminRepo) election(c echo.Context, id uint64) error {
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	if len(election.Result.Winner) > 0 && election.Result.Winner != "R.O.N." {
-		candidate, err := r.store.FindCandidate(election.Result.Winner)
-		if err != nil {
-			return r.errorHandle(c, err)
+	if election.Result != nil {
+		if len(election.Result.Winner) > 0 && election.Result.Winner != "R.O.N." {
+			candidate, err := r.store.FindCandidate(election.Result.Winner)
+			if err != nil {
+				return r.errorHandle(c, err)
+			}
+			election.Result.Winner = candidate.Name
 		}
-		election.Result.Winner = candidate.Name
 	}
 	noOfBallots := 0
 	if election.Open || election.Closed {
@@ -307,12 +308,16 @@ func (r *AdminRepo) election(c echo.Context, id uint64) error {
 		Ballots    int
 		Voters     int
 		Error      string
+		URL        string
+		VotersList []*storage.Voter
 	}{
 		Election:   election,
 		Candidates: candidates,
 		Ballots:    noOfBallots,
-		Voters:     noOfVoters,
+		Voters:     noOfVoters - len(election.Excluded),
 		Error:      err1,
+		URL:        "https://" + r.controller.DomainName + "/admin/election/" + strconv.FormatUint(election.Id, 10),
+		VotersList: voters,
 	}
 	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.ElectionTemplate)
 	if err != nil {
@@ -390,7 +395,7 @@ func (r *AdminRepo) EditElection(c echo.Context) error {
 
 	strings.ReplaceAll(c.Request().URL.Path, "/edit", "")
 
-	return r.Election(c)
+	return r.election(c, election.Id)
 }
 
 func (r *AdminRepo) OpenElection(c echo.Context) error {
@@ -431,64 +436,70 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
-	emailTemplate := template.New("email.tmpl")
-	emailTemplate = template.Must(emailTemplate.ParseFiles("templates/email.tmpl"))
-
 	voters, err := r.store.GetVoters()
 
 	for _, voter := range voters {
-		url := &storage.URL{
-			Url:      uuid.NewString(),
-			Election: id,
-			Voter:    voter.Email,
-			Voted:    false,
+		skip := false
+		for _, v := range election.Excluded {
+			if voter.Email == v.Email {
+				skip = true
+			}
 		}
 
-		_, err = r.store.AddURL(url)
-		if err != nil {
-			return r.errorHandle(c, err)
-		}
+		if !skip {
+			url := &storage.URL{
+				Url:      uuid.NewString(),
+				Election: id,
+				Voter:    voter.Email,
+				Voted:    false,
+			}
 
-		file := utils.Mail{
-			Subject: "YSTV - Vote for (" + election.Name + ")",
-			Tpl:     emailTemplate,
-			To:      voter.Email,
-			From:    "YSTV Elections <stv@ystv.co.uk>",
-			TplData: struct {
-				Election struct {
-					Name        string
-					Description string
-				}
-				Voter struct {
-					Name string
-				}
-				URL string
-			}{
-				Election: struct {
-					Name        string
-					Description string
+			_, err = r.store.AddURL(url)
+			if err != nil {
+				return r.errorHandle(c, err)
+			}
+
+			file := utils.Mail{
+				Subject: "YSTV - Vote for (" + election.Name + ")",
+				Tpl:     r.controller.Template.RenderEmail(templates.EmailTemplate),
+				To:      voter.Email,
+				From:    "YSTV Elections <stv@ystv.co.uk>",
+				TplData: struct {
+					Election struct {
+						Name        string
+						Description string
+					}
+					Voter struct {
+						Name string
+					}
+					URL string
 				}{
-					Name:        election.Name,
-					Description: election.Description,
+					Election: struct {
+						Name        string
+						Description string
+					}{
+						Name:        election.Name,
+						Description: election.Description,
+					},
+					Voter: struct {
+						Name string
+					}{
+						Name: voter.Name,
+					},
+					URL: "https://" + r.controller.DomainName + "/vote/" + url.Url,
 				},
-				Voter: struct {
-					Name string
-				}{
-					Name: voter.Name,
-				},
-				URL: "https://" + r.controller.DomainName + "/vote/" + url.Url,
-			},
-		}
+			}
 
-		err = r.mailer.SendMail(file)
-		if err != nil {
-			return r.errorHandle(c, err)
+			err = r.mailer.SendMail(file)
+			if err != nil {
+				return r.errorHandle(c, err)
+			}
 		}
 	}
 
 	strings.ReplaceAll(c.Request().URL.Path, "/open", "")
 
-	return r.Election(c)
+	return r.election(c, election.Id)
 }
 
 func (r *AdminRepo) CloseElection(c echo.Context) error {
@@ -595,7 +606,100 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 
 	strings.ReplaceAll(c.Request().URL.Path, "/close", "")
 
-	return r.Election(c)
+	return r.election(c, election.Id)
+}
+
+func (r *AdminRepo) Exclude(c echo.Context) error {
+	temp := c.Param("id")
+	temp1 := []rune(temp)
+	for _, r2 := range temp1 {
+		if !unicode.IsNumber(r2) {
+			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
+		}
+	}
+	id, err := strconv.ParseUint(temp, 10, 64)
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+
+	election, err := r.store.FindElection(id)
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+
+	err = c.Request().ParseForm()
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+
+	email := c.Request().FormValue("email")
+
+	voter, err := r.store.FindVoter(email)
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+
+	for _, v := range election.Excluded {
+		if v.Email == voter.Email {
+			return r.election(c, election.Id)
+		}
+	}
+
+	election.Excluded = append(election.Excluded, voter)
+
+	_, err = r.store.EditElection(election)
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+
+	return r.election(c, election.Id)
+}
+
+func (r *AdminRepo) Include(c echo.Context) error {
+	temp := c.Param("id")
+	temp1 := []rune(temp)
+	for _, r2 := range temp1 {
+		if !unicode.IsNumber(r2) {
+			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
+		}
+	}
+	id, err := strconv.ParseUint(temp, 10, 64)
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+
+	election, err := r.store.FindElection(id)
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+
+	err = c.Request().ParseForm()
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+
+	email := c.Param("email")
+
+	voter, err := r.store.FindVoter(email)
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+
+	for index, v := range election.Excluded {
+		if v.Email == voter.Email {
+			copy(election.Excluded[index:], election.Excluded[index+1:])     // Shift a[i+1:] left one index
+			election.Excluded[len(election.Excluded)-1] = nil                // Erase last element (write zero value)
+			election.Excluded = election.Excluded[:len(election.Excluded)-1] // Truncate slice
+
+			_, err = r.store.EditElection(election)
+			if err != nil {
+				return r.errorHandle(c, err)
+			}
+			break
+		}
+	}
+
+	return r.election(c, election.Id)
 }
 
 func (r *AdminRepo) DeleteElection(c echo.Context) error {
@@ -615,6 +719,7 @@ func (r *AdminRepo) DeleteElection(c echo.Context) error {
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
+
 	return r.Elections(c)
 }
 

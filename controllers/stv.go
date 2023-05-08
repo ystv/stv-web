@@ -8,7 +8,6 @@ import (
 type Repos struct {
 	Admin        *AdminRepo
 	Home         *HomeRepo
-	Public       *PublicRepo
 	Registration *RegistrationRepo
 	Vote         *VoteRepo
 }
@@ -17,7 +16,6 @@ func NewRepos(controller Controller, mailer *utils.Mailer, store *store.Store) *
 	return &Repos{
 		Admin:        NewAdminRepo(controller, mailer, store),
 		Home:         NewHomeRepo(controller, store),
-		Public:       NewPublicRepo(controller),
 		Registration: NewRegistrationRepo(controller, store),
 		Vote:         NewVoteRepo(controller, store),
 	}
