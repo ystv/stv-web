@@ -2,7 +2,6 @@ package store
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"sync"
@@ -23,7 +22,11 @@ func NewFileBackend() (Backend, error) {
 	fb := &FileBackend{path: "./db/store.db"}
 	state, err := fb.read()
 	if err != nil {
-		return nil, err
+		fb = &FileBackend{path: "/db/store.db"}
+		state, err = fb.read()
+		if err != nil {
+			return nil, err
+		}
 	}
 	// persist state
 	err = fb.save(state)
@@ -38,7 +41,7 @@ func NewFileBackend() (Backend, error) {
 func (fb *FileBackend) read() (*storage.STV, error) {
 	var stv storage.STV
 
-	data, err := ioutil.ReadFile(fb.path)
+	data, err := os.ReadFile(fb.path)
 	// Non-existing stv is ok
 	if err != nil && !os.IsNotExist(err) {
 		return nil, fmt.Errorf("no previous file read: %w", err)
@@ -60,7 +63,7 @@ func (fb *FileBackend) save(stv *storage.STV) error {
 		return fmt.Errorf("failed to encode stv: %w", err)
 	}
 	tmp := fmt.Sprintf(fb.path+".%v", time.Now())
-	if err := ioutil.WriteFile(tmp, out, 0600); err != nil {
+	if err := os.WriteFile(tmp, out, 0600); err != nil {
 		return fmt.Errorf("failed to write stv: %w", err)
 	}
 	err = os.Rename(tmp, fb.path)
