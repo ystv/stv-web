@@ -96,6 +96,9 @@ func (t *Templater) RenderTemplate(w io.Writer, data interface{}, mainTmpl Templ
 		"inc": func(a int) int {
 			return a + 1
 		},
+		"even": func(a int) bool {
+			return a%2 == 0
+		},
 		"incUInt64": func(a uint64) uint64 {
 			return a + 1
 		},
