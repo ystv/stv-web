@@ -59,6 +59,7 @@ func NewMailer(config MailConfig) (*Mailer, error) {
 		Authentication: mail.AuthLogin,
 		ConnectTimeout: 10 * time.Second,
 		SendTimeout:    10 * time.Second,
+		KeepAlive:      true,
 		TLSConfig:      &tls.Config{InsecureSkipVerify: true},
 	}
 
