@@ -43,8 +43,9 @@ func main() {
 	}
 
 	var mailer *utils.Mailer
+	var mailConfig utils.MailConfig
 	if config.Mail.Host != "" {
-		mailConfig := utils.MailConfig{
+		mailConfig = utils.MailConfig{
 			Host:     config.Mail.Host,
 			Port:     config.Mail.Port,
 			Username: config.Mail.User,
@@ -164,7 +165,7 @@ func main() {
 	router1 := routes.New(&routes.NewRouter{
 		Config: config,
 		Port:   config.Server.Port,
-		Repos:  controllers.NewRepos(controller, mailer, newStore),
+		Repos:  controllers.NewRepos(controller, mailer, newStore, mailConfig),
 		Debug:  config.Server.Debug,
 		Mailer: mailer,
 	})

@@ -12,9 +12,9 @@ type Repos struct {
 	Vote         *VoteRepo
 }
 
-func NewRepos(controller Controller, mailer *utils.Mailer, store *store.Store) *Repos {
+func NewRepos(controller Controller, mailer *utils.Mailer, store *store.Store, mailConfig utils.MailConfig) *Repos {
 	return &Repos{
-		Admin:        NewAdminRepo(controller, mailer, store),
+		Admin:        NewAdminRepo(controller, mailer, store, mailConfig),
 		Home:         NewHomeRepo(controller, store),
 		Registration: NewRegistrationRepo(controller, store),
 		Vote:         NewVoteRepo(controller, store),

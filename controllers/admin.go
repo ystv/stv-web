@@ -9,6 +9,7 @@ import (
 	"github.com/ystv/stv_web/templates"
 	"github.com/ystv/stv_web/utils"
 	"github.com/ystv/stv_web/voting"
+	"log"
 	"strconv"
 	"strings"
 	"unicode"
@@ -18,13 +19,15 @@ type AdminRepo struct {
 	controller Controller
 	mailer     *utils.Mailer
 	store      *store.Store
+	mailConfig utils.MailConfig
 }
 
-func NewAdminRepo(controller Controller, mailer *utils.Mailer, store *store.Store) *AdminRepo {
+func NewAdminRepo(controller Controller, mailer *utils.Mailer, store *store.Store, mailConfig utils.MailConfig) *AdminRepo {
 	return &AdminRepo{
 		controller: controller,
 		mailer:     mailer,
 		store:      store,
+		mailConfig: mailConfig,
 	}
 }
 
@@ -437,6 +440,13 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 	}
 
 	voters, err := r.store.GetVoters()
+
+	r.mailer, err = utils.NewMailer(r.mailConfig)
+	if err != nil {
+		log.Printf("failed to reconnect to mail server: %+v", err)
+	} else {
+		log.Println("Reconnected to mail server")
+	}
 
 	for _, voter := range voters {
 		skip := false
