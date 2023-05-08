@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/ystv/stv_web/storage"
 	"github.com/ystv/stv_web/store"
+	"github.com/ystv/stv_web/templates"
 	"github.com/ystv/stv_web/utils"
 	"github.com/ystv/stv_web/voting"
 	"html/template"
@@ -79,7 +80,7 @@ func (r *AdminRepo) Admin(c echo.Context) error {
 		},
 		Voters: voters,
 	}
-	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, data, "admin.tmpl")
+	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.AdminTemplate)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -192,7 +193,7 @@ func (r *AdminRepo) Elections(c echo.Context) error {
 		Elections: elections,
 		Error:     err1,
 	}
-	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, data, "elections.tmpl")
+	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.ElectionsTemplate)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -260,7 +261,7 @@ func (r *AdminRepo) Election(c echo.Context) error {
 		Error:      err1,
 		URL:        "https://" + r.controller.DomainName + "/admin/election/" + strconv.FormatUint(election.Id, 10),
 	}
-	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, data, "election.tmpl")
+	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.ElectionTemplate)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -313,7 +314,7 @@ func (r *AdminRepo) election(c echo.Context, id uint64) error {
 		Voters:     noOfVoters,
 		Error:      err1,
 	}
-	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, data, "election.tmpl")
+	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.ElectionTemplate)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -640,7 +641,7 @@ func (r *AdminRepo) Voters(c echo.Context) error {
 		AllowRegistration: stv.AllowRegistration,
 		Error:             err1,
 	}
-	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, data, "voters.tmpl")
+	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.VotersTemplate)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -699,7 +700,7 @@ func (r *AdminRepo) errorHandle(c echo.Context, err error) error {
 		Error: err.Error(),
 	}
 	fmt.Println(data.Error)
-	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, data, "errors.tmpl")
+	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.ErrorTemplate)
 	if err != nil {
 		fmt.Println(err)
 		return err

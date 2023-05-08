@@ -5,6 +5,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/ystv/stv_web/storage"
 	"github.com/ystv/stv_web/store"
+	"github.com/ystv/stv_web/templates"
 	"net/http"
 )
 
@@ -30,7 +31,7 @@ func (r *RegistrationRepo) Register(c echo.Context) error {
 		return c.Redirect(http.StatusTemporaryRedirect, "/")
 	}
 
-	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, nil, "registration.tmpl")
+	err = r.controller.Template.RenderTemplate(c.Response().Writer, nil, templates.RegistrationTemplate)
 	if err != nil {
 		return err
 	}
@@ -47,7 +48,7 @@ func (r *RegistrationRepo) QR(c echo.Context) error {
 		return c.Redirect(http.StatusTemporaryRedirect, "/")
 	}
 
-	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, nil, "qr.tmpl")
+	err = r.controller.Template.RenderTemplate(c.Response().Writer, nil, templates.QRTemplate)
 	if err != nil {
 		return err
 	}
@@ -81,7 +82,7 @@ func (r *RegistrationRepo) AddVoter(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
-	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, nil, "registered.tmpl")
+	err = r.controller.Template.RenderTemplate(c.Response().Writer, nil, templates.RegisteredTemplate)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -96,7 +97,7 @@ func (r *RegistrationRepo) errorHandle(c echo.Context, err error) error {
 		Error: err.Error(),
 	}
 	fmt.Println(data.Error)
-	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, data, "registrationError.tmpl")
+	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.RegistrationErrorTemplate)
 	if err != nil {
 		fmt.Println(err)
 		return err

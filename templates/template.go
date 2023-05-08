@@ -11,40 +11,41 @@ import (
 	"time"
 )
 
-const TemplatePrefix = "templates/"
-
 //go:embed *.tmpl
-var tmpls1 embed.FS
+var tmpls embed.FS
 
-type Templater struct {
-	dashboard *template.Template
+type (
+	Templater struct{}
+	Template  string
+)
+
+const (
+	AdminTemplate             Template = "admin.tmpl"
+	ElectionTemplate          Template = "election.tmpl"
+	ElectionsTemplate         Template = "elections.tmpl"
+	EmailTemplate             Template = "email.tmpl"
+	ErrorTemplate             Template = "errors.tmpl"
+	HomeTemplate              Template = "home.tmpl"
+	QRTemplate                Template = "qr.tmpl"
+	RegisteredTemplate        Template = "registered.tmpl"
+	RegistrationTemplate      Template = "registration.tmpl"
+	RegistrationErrorTemplate Template = "registrationError.tmpl"
+	VoteTemplate              Template = "vote.tmpl"
+	VotedTemplate             Template = "voted.tmpl"
+	VoteErrorTemplate         Template = "voteError.tmpl"
+	VotersTemplate            Template = "voters.tmpl"
+)
+
+func (t Template) GetString() string {
+	return string(t)
 }
 
-var BaseTemplates = []string{
-	"_base.tmpl",
-	"_top.tmpl",
-	"_footer.tmpl",
-}
-
-func (t *Templater) Page(w io.Writer, p structs.PageParams) error {
-	return t.dashboard.Execute(w, p)
-}
-
-func (t *Templater) RenderTemplate(w io.Writer, context structs.PageParams, data interface{}, mainTmpl string, addTmpls ...string) error {
-	_ = tmpls1
+func (t *Templater) RenderTemplate(w io.Writer, data interface{}, mainTmpl Template) error {
 	var err error
 
 	td := structs.Globals{
 		PageParams: context,
 		PageData:   data,
-	}
-
-	ownTmpls := append(addTmpls, mainTmpl)
-	baseTmpls := append(BaseTemplates, ownTmpls...)
-
-	var tmpls []string
-	for _, baseTmpl := range baseTmpls {
-		tmpls = append(tmpls, filepath.Join(TemplatePrefix, baseTmpl))
 	}
 
 	t1 := template.New("_base.tmpl")
@@ -110,12 +111,18 @@ func (t *Templater) RenderTemplate(w io.Writer, context structs.PageParams, data
 			return a + 1
 		},
 	})
-	t1, err = t1.ParseFiles(tmpls...)
+
+	t1, err = t1.ParseFS(tmpls, "_base.tmpl", "_top.tmpl", "_footer.tmpl", string(mainTmpl))
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 
 	return t1.Execute(w, td)
+}
+
+func (t *Templater) RenderEmail(emailTemplate Template) *template.Template {
+	return template.Must(template.New("email.tmpl").ParseFS(tmpls, emailTemplate.GetString()))
 }
 
 func renderHTML(value interface{}) template.HTML {

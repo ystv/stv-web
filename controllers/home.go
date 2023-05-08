@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/labstack/echo/v4"
 	"github.com/ystv/stv_web/store"
+	"github.com/ystv/stv_web/templates"
 )
 
 type HomeRepo struct {
@@ -31,7 +32,7 @@ func (r *HomeRepo) Home(c echo.Context) error {
 		AllowRegistration: allow,
 		URL:               "https://" + r.controller.DomainName + "/registration",
 	}
-	err = r.controller.Template.RenderTemplate(c.Response().Writer, r.controller.pageParams, data, "home.tmpl")
+	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.HomeTemplate)
 	if err != nil {
 		return err
 	}
