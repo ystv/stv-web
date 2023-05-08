@@ -24,11 +24,11 @@ func NewFileBackend() (Backend, error) {
 	_, err := os.ReadFile("/db/store.db")
 	if err == nil {
 		fb = &FileBackend{path: "./db/store.db"}
-	}
-
-	_, err = os.ReadFile("./db/store.db")
-	if err == nil {
-		fb = &FileBackend{path: "./db/store.db"}
+	} else {
+		_, err = os.ReadFile("./db/store.db")
+		if err == nil {
+			fb = &FileBackend{path: "./db/store.db"}
+		}
 	}
 
 	state, err := fb.read()
