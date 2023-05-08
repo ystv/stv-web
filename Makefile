@@ -9,8 +9,6 @@ PROTO_GENERATED=storage/storage.pb.go
 .DEFAULT_GOAL := build
 
 %.pb.go: %.proto
-	which protoc
-	which protoc-gen-go
 	$(PROTOC) -I=storage/ --go_opt=paths=source_relative --go_out=storage/ $<
 
 build: $(PROTO_GENERATED)
