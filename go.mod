@@ -1,8 +1,6 @@
 module github.com/ystv/stv_web
 
-go 1.19
-
-replace google.golang.org/grpc => google.golang.org/grpc v1.26.0
+go 1.20
 
 require (
 	github.com/BurntSushi/toml v1.2.1
