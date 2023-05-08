@@ -18,37 +18,40 @@ import (
 func main() {
 	var err error
 
-	filesSlash, err := os.ReadDir("/")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, file := range filesSlash {
-		fmt.Println(file.Name(), file.IsDir())
-	}
-
-	filesDot, err := os.ReadDir(".")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, file := range filesDot {
-		fmt.Println(file.Name(), file.IsDir())
-	}
-
-	filesToml, err := os.ReadDir("/toml")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, file := range filesToml {
-		fmt.Println(file.Name(), file.IsDir())
-	}
+	//filesSlash, err := os.ReadDir("/")
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//
+	//for _, file := range filesSlash {
+	//	fmt.Println(file.Name(), file.IsDir())
+	//}
+	//
+	//filesDot, err := os.ReadDir(".")
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//
+	//for _, file := range filesDot {
+	//	fmt.Println(file.Name(), file.IsDir())
+	//}
+	//
+	//filesToml, err := os.ReadDir("/toml")
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
+	//
+	//for _, file := range filesToml {
+	//	fmt.Println(file.Name(), file.IsDir())
+	//}
 
 	config := &structs.Config{}
 	_, err = toml.DecodeFile("./toml/config.toml", config)
 	if err != nil {
-		log.Fatal(err)
+		_, err = toml.DecodeFile("/toml/config.toml", config)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	if config.Server.Debug {
