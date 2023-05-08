@@ -51,7 +51,7 @@ func main() {
 		if err != nil {
 			log.Printf("failed to connect to mail server: %+v", err)
 		} else {
-			log.Printf("Connected to mail server: %s\n", config.Mail.Host)
+			log.Println("Connected to mail server")
 
 			mailer.KeepAlive = true
 
