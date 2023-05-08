@@ -36,6 +36,15 @@ func main() {
 		fmt.Println(file.Name(), file.IsDir())
 	}
 
+	filesToml, err := os.ReadDir("/toml")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, file := range filesToml {
+		fmt.Println(file.Name(), file.IsDir())
+	}
+
 	config := &structs.Config{}
 	_, err = toml.DecodeFile("./toml/config.toml", config)
 	if err != nil {
