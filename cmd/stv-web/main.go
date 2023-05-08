@@ -13,6 +13,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"time"
 )
 
 func main() {
@@ -173,6 +174,8 @@ func main() {
 		log.Fatal("Unable to send email")
 	}
 
+	go noOp(mailer)
+
 	err = router1.Start()
 	if err != nil {
 		err1 := mailer.SendErrorFatalMail(utils.Mail{
@@ -183,5 +186,15 @@ func main() {
 			fmt.Println(err1)
 		}
 		log.Fatalf("The web server couldn't be started!\n\n%s\n\nExiting!", err)
+	}
+}
+
+func noOp(mailer *utils.Mailer) {
+	for {
+		err := mailer.SMTPClient.Noop()
+		if err != nil {
+			log.Fatal(err)
+		}
+		time.Sleep(5 * time.Second)
 	}
 }
