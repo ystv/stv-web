@@ -37,7 +37,7 @@ pipeline {
                         script {
                             sh 'docker pull $REGISTRY_ENDPOINT/ystv/stv-web:$BUILD_ID'
                             sh 'docker rm -f ystv-stv-web'
-                            sh 'docker run -p 6691:6691 --name ystv-stv-web -v $TARGET_PATH/db:/db -v $TARGET_PATH/db:/toml --restart=always $REGISTRY_ENDPOINT/ystv/stv-web:$BUILD_ID'
+                            sh 'docker run -d -p 6691:6691 --name ystv-stv-web -v $TARGET_PATH/db:/db -v $TARGET_PATH/toml:/toml --restart=always $REGISTRY_ENDPOINT/ystv/stv-web:$BUILD_ID'
                             sh 'docker image prune -a -f --filter "label=site=stv-web"'
                         }
                     }
