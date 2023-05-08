@@ -19,28 +19,26 @@ type FileBackend struct {
 }
 
 func NewFileBackend() (Backend, error) {
-	fb := &FileBackend{path: "./db/store.db"}
+	var fb *FileBackend
+
+	_, err := os.ReadFile("/db/store.db")
+	if err == nil {
+		fb = &FileBackend{path: "./db/store.db"}
+	}
+
+	_, err = os.ReadFile("./db/store.db")
+	if err == nil {
+		fb = &FileBackend{path: "./db/store.db"}
+	}
+
 	state, err := fb.read()
 	if err != nil {
-		fb = &FileBackend{path: "/db/store.db"}
-		state, err = fb.read()
-		if err != nil {
-			return nil, err
-		}
+		return nil, err
 	}
 	// persist state
 	err = fb.save(state)
 	if err != nil {
-		fb = &FileBackend{path: "/db/store.db"}
-		state, err = fb.read()
-		if err != nil {
-			return nil, err
-		}
-
-		err = fb.save(state)
-		if err != nil {
-			return nil, err
-		}
+		return nil, err
 	}
 	fb.cache = state
 	return fb, nil

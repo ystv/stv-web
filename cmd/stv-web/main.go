@@ -18,27 +18,20 @@ import (
 func main() {
 	var err error
 
-	file, err := os.ReadFile("/db/store.db")
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println(string(file))
-	}
-
-	file, err = os.ReadFile("./db/store.db")
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println(string(file))
-	}
-
 	config := &structs.Config{}
-	_, err = toml.DecodeFile("./toml/config.toml", config)
-	if err != nil {
+
+	_, err = os.ReadFile("/toml/config.toml")
+	if err == nil {
 		_, err = toml.DecodeFile("/toml/config.toml", config)
-		if err != nil {
-			log.Fatal(err)
-		}
+	}
+
+	_, err = os.ReadFile("./toml/config.toml")
+	if err == nil {
+		_, err = toml.DecodeFile("./toml/config.toml", config)
+	}
+
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	if config.Server.Debug {
