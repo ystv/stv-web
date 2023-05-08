@@ -10,8 +10,8 @@ type Store struct {
 	backend Backend
 }
 
-func NewStore() (*Store, error) {
-	backend, err := NewFileBackend()
+func NewStore(root bool) (*Store, error) {
+	backend, err := NewFileBackend(root)
 	if err != nil {
 		return nil, err
 	}

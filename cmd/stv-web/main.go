@@ -20,9 +20,12 @@ func main() {
 
 	config := &structs.Config{}
 
+	root := false
+
 	_, err = os.ReadFile("/toml/config.toml")
 	if err == nil {
 		_, err = toml.DecodeFile("/toml/config.toml", config)
+		root = true
 	} else {
 		_, err = os.ReadFile("./toml/config.toml")
 		if err == nil {
@@ -142,7 +145,7 @@ func main() {
 		},
 	}
 
-	newStore, err := store.NewStore()
+	newStore, err := store.NewStore(root)
 	if err != nil {
 		log.Fatal("Failed to create store", err)
 	}

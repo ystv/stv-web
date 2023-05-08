@@ -42,30 +42,22 @@ pipeline {
                         }
                     }
                 }
-                /*stage('Production') {
+                stage('Production') {
                     when {
                         expression { return env.TAG_NAME ==~ /v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)/ } // Checking if it is main semantic version release
                     }
                     environment {
-                        APP_ENV = credentials('computing-env')
-                        TARGET_SERVER = credentials('prod-server-address')
-                        TARGET_PATH = credentials('prod-server-path')
+                        TARGET_PATH = credentials('moss-server-path-stv')
                     }
                     steps {
-                        sshagent(credentials : ['prod-server-key']) {
-                            script {
-                                sh 'rsync -av $APP_ENV deploy@$TARGET_SERVER:$TARGET_PATH/computing/.env'
-                                sh '''ssh -tt deploy@$TARGET_SERVER << EOF
-                                    docker pull $REGISTRY_ENDPOINT/ystv/computing:$BUILD_ID
-                                    docker rm -f ystv-computing
-                                    docker run -d -p 7075:7075 --env-file $TARGET_PATH/computing/.env --name ystv-computing --restart=always $REGISTRY_ENDPOINT/ystv/computing:$BUILD_ID
-                                    docker image prune -a -f --filter "label=site=computing"
-                                    exit 0
-                                EOF'''
-                            }
+                        script {
+                            sh 'docker pull $REGISTRY_ENDPOINT/ystv/stv-web:$BUILD_ID'
+                            sh 'docker rm -f ystv-stv-web'
+                            sh 'docker run -d -p 6691:6691 --name ystv-stv-web -v $TARGET_PATH/db:/db -v $TARGET_PATH/toml:/toml --restart=always $REGISTRY_ENDPOINT/ystv/stv-web:$BUILD_ID'
+                            sh 'docker image prune -a -f --filter "label=site=stv-web"'
                         }
                     }
-                }*/
+                }
             }
         }
     }

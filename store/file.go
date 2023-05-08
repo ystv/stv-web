@@ -18,17 +18,13 @@ type FileBackend struct {
 	mutex sync.RWMutex
 }
 
-func NewFileBackend() (Backend, error) {
+func NewFileBackend(root bool) (Backend, error) {
 	var fb *FileBackend
 
-	_, err := os.ReadFile("/db/store.db")
-	if err == nil {
-		fb = &FileBackend{path: "./db/store.db"}
+	if root {
+		fb = &FileBackend{path: "/db/store.db"}
 	} else {
-		_, err = os.ReadFile("./db/store.db")
-		if err == nil {
-			fb = &FileBackend{path: "./db/store.db"}
-		}
+		fb = &FileBackend{path: "./db/store.db"}
 	}
 
 	state, err := fb.read()
