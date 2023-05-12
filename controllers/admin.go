@@ -247,19 +247,16 @@ func (r *AdminRepo) Election(c echo.Context) error {
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	noOfVoters := len(voters)
 	data := struct {
 		Election   *storage.Election
 		Candidates []*storage.Candidate
 		Ballots    int
-		Voters     int
 		Error      string
 		VotersList []*storage.Voter
 	}{
 		Election:   election,
 		Candidates: candidates,
 		Ballots:    noOfBallots,
-		Voters:     noOfVoters - len(election.Excluded),
 		Error:      err1,
 		VotersList: voters,
 	}
@@ -447,6 +444,8 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 	} else {
 		log.Println("Reconnected to mail server")
 	}
+
+	election.Voters = uint64(len(voters) - len(election.Excluded))
 
 	for _, voter := range voters {
 		skip := false
