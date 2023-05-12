@@ -137,8 +137,8 @@
             }
 
             function removeElection() {
-                $('#removeElectionForm').action = '/admin/election/delete/' + id;
-                $('#removeElectionForm').submit();
+                document.getElementById("removeElectionForm").action = '/admin/election/delete/' + id;
+                document.getElementById("removeElectionForm").submit();
             }
         </script>
     </div>
