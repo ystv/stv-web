@@ -8,7 +8,8 @@
                     {{if .PageData.Election.Description}}<br/>
                 <br/>Here is a brief description of the role: {{.PageData.Election.Description}}{{end}}<br><br>
                     Use the up and down arrows next to eah candidate to position it, where 1 is your preference and then
-                    everyone down from there.</p><br>
+                    everyone down from there.<br>
+                    There is also a "Remove from ballot" button that would exclude a candidate from your ballot, this action can be undone if you wish as there will be a button below called "Include in ballot".</p><br>
                 <form id="voteForm" action="/vote/{{.PageData.URL}}" method="post">
                     <table class="table table-condensed table-striped prevent-select" style="max-width: 500px;"
                            id="voteTable">
@@ -17,31 +18,34 @@
                             <th>Order</th>
                             <th>Candidate</th>
                             <th>Move</th>
+                            <th>Remove from ballot</th>
                         </tr>
                         </thead>
                         <tbody>
                         {{$i := 0}}
                         {{range .PageData.Candidates}}
-                            <tr{{if even (inc $i)}} class="even"{{end}}>
+                            <tr{{if even (inc $i)}} class="even"{{end}} id="candidate_row_{{$i}}">
                                 <td>{{inc $i}}</td>
-                                <td>{{.Name}}
+                                <td id="candidate~{{$i}}">{{.Name}}
                                     <input type="text" name="order~{{$i}}" value="{{.Id}}" style="display: none"/></td>
                                 <td>
-                                    <a class="up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;
-                                    <a class="down">down &darr;</a>
+                                    <a class="button up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;
+                                    <a class="button down">down &darr;</a>
                                 </td>
+                                <td><a class="button is-warning is-light removeFromBallot">Remove from ballot</a></td>
                             </tr>
                             {{$i = inc $i}}
                         {{end}}
                         {{if .PageData.Election.Ron}}
-                            <tr{{if even (inc $i)}} class="even"{{end}}>
+                            <tr{{if even (inc $i)}} class="even"{{end}} id="candidate_row_{{$i}}">
                                 <td>{{inc $i}}</td>
-                                <td>R.O.N.
+                                <td id="candidate~{{$i}}">R.O.N.
                                     <input type="text" name="order~{{$i}}" value="R.O.N." style="display: none"/></td>
                                 <td>
-                                    <a class="up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;
-                                    <a class="down">down &darr;</a>
+                                    <a class="button up">up &uarr;</a>&nbsp;&nbsp;
+                                    <a class="button down">down &darr;</a>&nbsp;&nbsp;
                                 </td>
+                                <td><a class="button is-warning is-light removeFromBallot">Remove from ballot</a></td>
                             </tr>
                         {{end}}
                         </tbody>
@@ -50,6 +54,23 @@
                             <th>Order</th>
                             <th>Candidate</th>
                             <th>Move</th>
+                            <th>Remove from ballot</th>
+                        </tr>
+                        </tfoot>
+                    </table>
+                    <br>
+                    <table class="table table-condensed table-striped" id="removedTable">
+                        <thead>
+                        <tr>
+                            <th>Candidate</th>
+                            <th>Include in ballot</th>
+                        </tr>
+                        </thead>
+                        <tbody></tbody>
+                        <tfoot>
+                        <tr>
+                            <th>Candidate</th>
+                            <th>Include in ballot</th>
                         </tr>
                         </tfoot>
                     </table>
@@ -103,27 +124,89 @@
             }
 
             $(document).ready(function () {
-                $(".up,.down").click(function () {
-                    var row = $(this).parents("tr:first");
+                $(document).on('click', '.up,.down', function () {
+                // $(".up,.down").click(function () {
+                    let row = $(this).parents("tr:first");
                     if ($(this).is(".up")) {
                         row.insertBefore(row.prev());
                     } else {
                         row.insertAfter(row.next());
                     }
-                    $("#voteTable").find("tr").each(function (index) {
-                        $("#voteTable").find("tr").removeClass("even odd");
-                        if (index > 0) {
-                            $(this).find("td").eq(0).html(index);
-                            $(this).find("input").eq(0).attr("name", "order~" + (index - 1));
-                            if (index % 2 === 0) {
-                                $("#voteTable").find("tr:even").addClass("even");
-                            } else {
-                                $("#voteTable").find("tr:odd").addClass("odd");
-                            }
-                        }
-                    });
+                    // $("#voteTable").find("tr").each(function (index) {
+                    //     $("#voteTable").find("tr").removeClass("even odd");
+                    //     if (index > 0) {
+                    //         $(this).find("td").eq(0).html(index);
+                    //         $(this).find("input").eq(0).attr("name", "order~" + (index - 1));
+                    //         if (index % 2 === 0) {
+                    //             $("#voteTable").find("tr:even").addClass("even");
+                    //         } else {
+                    //             $("#voteTable").find("tr:odd").addClass("odd");
+                    //         }
+                    //     }
+                    // });
+                    sortRowsVote()
+                });
+                $(document).on('click', '.removeFromBallot', function () {
+                // $(".removeFromBallot").click(function () {
+                    let row = $(this).parents("tr:first");
+                    console.log(row)
+                    let rowId = row.attr("id")
+                    console.log(rowId)
+                    let candidateTd = row.find("td").eq(1);
+                    console.log(candidateTd[0].innerHTML)
+                    $("#removedTable").find("tbody").append('<tr><td>' + candidateTd[0].innerHTML + '</td><td><a class="button is-warning is-light includeInBallot">Include in ballot</a></td></tr>');
+                    console.log('<tr>' + candidateTd[0].innerHTML + '<td><a class="button is-warning is-light includeInBallot">Include in ballot</a></td></tr>')
+                    $("#" + rowId).remove();
+                    sortRowsVote();
+                    sortRowsRemoved();
+                });
+                $(document).on('click', '.includeInBallot', function () {
+                // $(".includeInBallot").click(function () {
+                    let row = $(this).parents("tr:first");
+                    console.log(row)
+                    let rowId = row.attr("id")
+                    console.log(rowId)
+                    let candidateTd = row.find("td").eq(0);
+                    console.log(candidateTd[0].innerHTML)
+                    $("#voteTable").find("tbody").append('<tr><td>-1</td><td>' + candidateTd[0].innerHTML + '</td><td><a class="button up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;<a class="button down">down &darr;</a></td><td><a class="button is-warning is-light removeFromBallot">Remove from ballot</a></td></tr>');
+                    console.log('<tr><td>-1</td><td>' + candidateTd[0].innerHTML + '</td><td><a class="button up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;<a class="button down">down &darr;</a></td><td><a class="button is-warning is-light removeFromBallot">Remove from ballot</a></td></tr>')
+                    $("#" + rowId).remove();
+                    sortRowsVote();
+                    sortRowsRemoved();
                 });
             });
+
+            function sortRowsVote() {
+                $("#voteTable").find("tr").each(function (index) {
+                    $("#voteTable").find("tr").removeClass("even odd");
+                    if (index > 0) {
+                        $(this).find("td").eq(0).html(index);
+                        $(this).find("td").eq(1).attr("id", "candidate~" + index)
+                        $(this).find("input").eq(0).attr("name", "order~" + (index - 1));
+                        $(this).attr("id", "candidate_row_" + index);
+                        if (index % 2 === 0) {
+                            $("#voteTable").find("tr:even").addClass("even");
+                        } else {
+                            $("#voteTable").find("tr:odd").addClass("odd");
+                        }
+                    }
+                });
+            }
+
+            function sortRowsRemoved() {
+                $("#removedTable").find("tr").each(function (index) {
+                    $("#removedTable").find("tr").removeClass("even odd");
+                    if (index > 0) {
+                        $(this).find("td").eq(0).attr("id", "candidate_removed~" + index)
+                        $(this).attr("id", "candidate_removed_row_" + index);
+                        if (index % 2 === 0) {
+                            $("#removedTable").find("tr:even").addClass("even");
+                        } else {
+                            $("#removedTable").find("tr:odd").addClass("odd");
+                        }
+                    }
+                });
+            }
         </script>
     </div>
 {{end}}
