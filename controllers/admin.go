@@ -338,7 +338,7 @@ func (r *AdminRepo) AddElection(c echo.Context) error {
 	if len(tempRon) > 0 {
 		ron = true
 	}
-	if len(name) <= 0 || len(description) <= 0 {
+	if len(name) <= 0 {
 		return r.errorHandle(c, fmt.Errorf("name and description need to be filled"))
 	}
 	election := &storage.Election{
@@ -378,7 +378,7 @@ func (r *AdminRepo) EditElection(c echo.Context) error {
 	if len(tempRon) > 0 {
 		ron = true
 	}
-	if len(name) <= 0 || len(description) <= 0 {
+	if len(name) <= 0 {
 		return r.errorHandle(c, fmt.Errorf("name and description need to be filled"))
 	}
 	election := &storage.Election{
