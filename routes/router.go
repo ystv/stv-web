@@ -81,12 +81,14 @@ func (r *Router) loadRoutes() {
 
 				conn, err := config.Connect()
 				if err != nil {
+					fmt.Printf("error connecting to server: %v\n", err)
 					return false, fmt.Errorf("error connecting to server: %w", err)
 				}
 				defer conn.Conn.Close()
 
 				status, err := conn.Bind(r.config.AD.Bind.Username, r.config.AD.Bind.Password)
 				if err != nil {
+					fmt.Printf("error binding to server: %v\n", err)
 					return false, fmt.Errorf("error binding to server: %w", err)
 				}
 
@@ -96,6 +98,7 @@ func (r *Router) loadRoutes() {
 
 				status1, err := auth.Authenticate(config, username, password)
 				if err != nil {
+					fmt.Printf("unable to authenticate %s with error: %v\n", username, err)
 					return false, fmt.Errorf("unable to authenticate %s with error: %w", username, err)
 				}
 
@@ -107,12 +110,14 @@ func (r *Router) loadRoutes() {
 						entry, err = conn.GetAttributes("samAccountName", username, []string{"memberOf"})
 					}
 					if err != nil {
+						fmt.Printf("error getting user groups: %v\n", err)
 						return false, fmt.Errorf("error getting user groups: %w", err)
 					}
 
 					dnGroups := entry.GetAttributeValues("memberOf")
 
 					if len(dnGroups) == 0 {
+						fmt.Println("BIND_SAM user not member of any groups")
 						return false, fmt.Errorf("BIND_SAM user not member of any groups")
 					}
 
@@ -126,10 +131,12 @@ func (r *Router) loadRoutes() {
 					}
 
 					if !stv {
+						fmt.Printf("STN not allowed for %s!\n", username)
 						return false, fmt.Errorf("STN not allowed for %s!\n", username)
 					}
 					return true, nil
 				} else {
+					fmt.Printf("user not authenticated: %s!\n", username)
 					return false, fmt.Errorf("user not authenticated: %s!\n", username)
 				}
 			}))
