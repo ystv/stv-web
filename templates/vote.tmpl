@@ -9,7 +9,8 @@
                 <br/>Here is a brief description of the role: {{.PageData.Election.Description}}{{end}}<br><br>
                     Use the up and down arrows next to eah candidate to position it, where 1 is your preference and then
                     everyone down from there.<br>
-                    There is also a "Remove from ballot" button that would exclude a candidate from your ballot, this action can be undone if you wish as there will be a button below called "Include in ballot".</p><br>
+                    There is also a "Remove from ballot" button that would exclude a candidate from your ballot, this action can be undone if you wish as there will be a button below called "Include in ballot".<br>
+                    You need at least one candidate in the election to vote, even if that candidate is R.O.N.</p><br>
                 <form id="voteForm" action="/vote/{{.PageData.URL}}" method="post">
                     <table class="table table-condensed table-striped prevent-select" style="max-width: 500px;"
                            id="voteTable">
@@ -58,24 +59,24 @@
                         </tr>
                         </tfoot>
                     </table>
-                    <br>
-                    <table class="table table-condensed table-striped" id="removedTable">
-                        <thead>
-                        <tr>
-                            <th>Candidate</th>
-                            <th>Include in ballot</th>
-                        </tr>
-                        </thead>
-                        <tbody></tbody>
-                        <tfoot>
-                        <tr>
-                            <th>Candidate</th>
-                            <th>Include in ballot</th>
-                        </tr>
-                        </tfoot>
-                    </table>
                     <a class="button" onclick="voteOpenModal()">Submit vote</a>
                 </form>
+                <br>
+                <table class="table table-condensed table-striped" id="removedTable">
+                    <thead>
+                    <tr>
+                        <th>Candidate</th>
+                        <th>Include in ballot</th>
+                    </tr>
+                    </thead>
+                    <tbody></tbody>
+                    <tfoot>
+                    <tr>
+                        <th>Candidate</th>
+                        <th>Include in ballot</th>
+                    </tr>
+                    </tfoot>
+                </table>
             </div>
         </div>
         <br>
@@ -93,6 +94,22 @@
                                     sure this is your selection?<br>
                                     <strong>This action cannot be undone!</strong><br></p>
                                 <button class="button is-danger" onclick="submitVoteFromModal()">Submit vote</button>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </div>
+            <button class="modal-close is-large" aria-label="close"></button>
+        </div>
+        <div id="invalidVoteModal" class="modal">
+            <div class="modal-background"></div>
+            <div class="modal-content">
+                <div class="box">
+                    <article class="media">
+                        <div class="media-content">
+                            <div class="content">
+                                <p class="title">Unable to submit vote</p>
+                                <p><strong>You need at least one candidate to submit your vote!</strong><br></p>
                             </div>
                         </div>
                     </article>
@@ -119,57 +136,44 @@
             }
 
             function voteOpenModal() {
-                document.getElementById("voteModal").classList.add("is-active");
-                valid = true;
+                let rows = 0;
+                $("#voteTable").find("tr").each(function (index) {
+                    if (index > 0) {
+                        rows++;
+                    }
+                });
+                if (rows >= 2) { {{/* 2 because obviously... who knows*/}}
+                    document.getElementById("voteModal").classList.add("is-active");
+                    valid = true;
+                } else {
+                    document.getElementById("invalidVoteModal").classList.add("is-active");
+                }
             }
 
             $(document).ready(function () {
                 $(document).on('click', '.up,.down', function () {
-                // $(".up,.down").click(function () {
                     let row = $(this).parents("tr:first");
                     if ($(this).is(".up")) {
                         row.insertBefore(row.prev());
                     } else {
                         row.insertAfter(row.next());
                     }
-                    // $("#voteTable").find("tr").each(function (index) {
-                    //     $("#voteTable").find("tr").removeClass("even odd");
-                    //     if (index > 0) {
-                    //         $(this).find("td").eq(0).html(index);
-                    //         $(this).find("input").eq(0).attr("name", "order~" + (index - 1));
-                    //         if (index % 2 === 0) {
-                    //             $("#voteTable").find("tr:even").addClass("even");
-                    //         } else {
-                    //             $("#voteTable").find("tr:odd").addClass("odd");
-                    //         }
-                    //     }
-                    // });
                     sortRowsVote()
                 });
                 $(document).on('click', '.removeFromBallot', function () {
-                // $(".removeFromBallot").click(function () {
                     let row = $(this).parents("tr:first");
-                    console.log(row)
                     let rowId = row.attr("id")
-                    console.log(rowId)
                     let candidateTd = row.find("td").eq(1);
-                    console.log(candidateTd[0].innerHTML)
                     $("#removedTable").find("tbody").append('<tr><td>' + candidateTd[0].innerHTML + '</td><td><a class="button is-warning is-light includeInBallot">Include in ballot</a></td></tr>');
-                    console.log('<tr>' + candidateTd[0].innerHTML + '<td><a class="button is-warning is-light includeInBallot">Include in ballot</a></td></tr>')
                     $("#" + rowId).remove();
                     sortRowsVote();
                     sortRowsRemoved();
                 });
                 $(document).on('click', '.includeInBallot', function () {
-                // $(".includeInBallot").click(function () {
                     let row = $(this).parents("tr:first");
-                    console.log(row)
                     let rowId = row.attr("id")
-                    console.log(rowId)
                     let candidateTd = row.find("td").eq(0);
-                    console.log(candidateTd[0].innerHTML)
                     $("#voteTable").find("tbody").append('<tr><td>-1</td><td>' + candidateTd[0].innerHTML + '</td><td><a class="button up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;<a class="button down">down &darr;</a></td><td><a class="button is-warning is-light removeFromBallot">Remove from ballot</a></td></tr>');
-                    console.log('<tr><td>-1</td><td>' + candidateTd[0].innerHTML + '</td><td><a class="button up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;<a class="button down">down &darr;</a></td><td><a class="button is-warning is-light removeFromBallot">Remove from ballot</a></td></tr>')
                     $("#" + rowId).remove();
                     sortRowsVote();
                     sortRowsRemoved();
