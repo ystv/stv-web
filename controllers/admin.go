@@ -451,6 +451,14 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 
 	election.Voters = uint64(len(voters) - len(election.Excluded))
 
+	go r.sendEmailThread(voters, election)
+
+	strings.ReplaceAll(c.Request().URL.Path, "/open", "")
+
+	return r.election(c, election.Id)
+}
+
+func (r *AdminRepo) sendEmailThread(voters []*storage.Voter, election *storage.Election) {
 	for _, voter := range voters {
 		skip := false
 		for _, v := range election.Excluded {
@@ -462,14 +470,14 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 		if !skip {
 			url := &storage.URL{
 				Url:      uuid.NewString(),
-				Election: id,
+				Election: election.Id,
 				Voter:    voter.Email,
 				Voted:    false,
 			}
 
-			_, err = r.store.AddURL(url)
+			_, err := r.store.AddURL(url)
 			if err != nil {
-				return r.errorHandle(c, err)
+				fmt.Println(err)
 			}
 
 			file := utils.Mail{
@@ -505,14 +513,10 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 
 			err = r.mailer.SendMail(file)
 			if err != nil {
-				return r.errorHandle(c, err)
+				fmt.Println(err)
 			}
 		}
 	}
-
-	strings.ReplaceAll(c.Request().URL.Path, "/open", "")
-
-	return r.election(c, election.Id)
 }
 
 func (r *AdminRepo) CloseElection(c echo.Context) error {
