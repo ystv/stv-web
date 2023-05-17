@@ -134,7 +134,7 @@ func (r *Router) loadRoutes() {
 					}
 
 					if !stv {
-						fmt.Printf("STN not allowed for %s!\n", username)
+						fmt.Printf("STV not allowed for %s!\n", username)
 						return false, fmt.Errorf("STN not allowed for %s!\n", username)
 					}
 					return true, nil
