@@ -6,6 +6,8 @@
     domain_name = "" # domain name
 
 [ad]
+    ad_bypass_username = ""
+    ad_bypass_password = ""
     ad_server = "" # Active Directory server
     ad_port = -1 # Active Directory port
     ad_base_dn = "" # User base DN

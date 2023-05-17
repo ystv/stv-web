@@ -72,6 +72,9 @@ func (r *Router) loadRoutes() {
 	{
 		if !r.router.Debug {
 			admin.Use(middleware2.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
+				if username == r.config.AD.BypassUsername && password == r.config.AD.BypassPassword { // This is here because AD decided to shit the bed
+					return true, nil
+				}
 				config := &auth.Config{
 					Server:   r.config.AD.Server,
 					Port:     r.config.AD.Port,

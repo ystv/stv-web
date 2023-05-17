@@ -17,11 +17,13 @@ type (
 	}
 
 	AD struct {
-		Server   string `toml:"ad_server"`
-		Port     int    `toml:"ad_port"`
-		BaseDN   string `toml:"ad_base_dn"`
-		Security int    `toml:"ad_security"`
-		Bind     adBind `toml:"bind"`
+		BypassUsername string `toml:"ad_bypass_username"`
+		BypassPassword string `toml:"ad_bypass_password"`
+		Server         string `toml:"ad_server"`
+		Port           int    `toml:"ad_port"`
+		BaseDN         string `toml:"ad_base_dn"`
+		Security       int    `toml:"ad_security"`
+		Bind           adBind `toml:"bind"`
 	}
 
 	adBind struct {
