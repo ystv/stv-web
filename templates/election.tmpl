@@ -20,7 +20,7 @@
                     Current state: Open<br><br>
                     Next action to take: <a class="button is-danger" onclick="closeElectionModal()">Close election</a>
                 {{else if and (not .Open) .Closed}}
-                    Voting stats (ballots / voters): {{$.PageData.Ballots}}/{{$.PageData.Voters}}<br><br>
+                    Voting stats (ballots / voters): {{$.PageData.Ballots}}/{{.Voters}}<br><br>
                     Current state: Closed<br><br>
                     {{with .Result}}
                         <strong>Winner: {{.Winner}}</strong><br><br>
