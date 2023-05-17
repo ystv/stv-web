@@ -380,6 +380,24 @@ func (store *Store) DeleteElection(id uint64) error {
 	return nil
 }
 
+func (store *Store) DeleteAllElections() error {
+	stv, err := store.backend.Read()
+	if err != nil {
+		return err
+	}
+
+	stv.Elections = []*storage.Election{}
+	stv.Candidates = []*storage.Candidate{}
+	stv.Ballots = []*storage.Ballot{}
+	stv.Urls = []*storage.URL{}
+
+	if err = store.backend.Write(stv); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (store *Store) GetURLsElectionId(id uint64) ([]*storage.URL, error) {
 	stv, err := store.Get()
 	if err != nil {
@@ -571,6 +589,21 @@ func (store *Store) DeleteVoter(email string) error {
 	} else {
 		return fmt.Errorf("voter not found for DeleteVoter")
 	}
+
+	if err = store.backend.Write(stv); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (store *Store) DeleteAllVoters() error {
+	stv, err := store.backend.Read()
+	if err != nil {
+		return err
+	}
+
+	stv.Voters = []*storage.Voter{}
 
 	if err = store.backend.Write(stv); err != nil {
 		return err
