@@ -228,9 +228,11 @@ func (r *AdminRepo) Election(c echo.Context) error {
 	}
 	if election.Result != nil {
 		if len(election.Result.Winner) > 0 && election.Result.Winner != "R.O.N." {
-			candidate, err := r.store.FindCandidate(election.Result.Winner)
+			var candidate *storage.Candidate
+			candidate, err = r.store.FindCandidate(election.Result.Winner)
 			if err != nil {
-				return r.errorHandle(c, err)
+				fmt.Println(err)
+				candidate = &storage.Candidate{Name: election.Result.Winner}
 			}
 			election.Result.Winner = candidate.Name
 		}
@@ -282,9 +284,11 @@ func (r *AdminRepo) election(c echo.Context, id uint64) error {
 	}
 	if election.Result != nil {
 		if len(election.Result.Winner) > 0 && election.Result.Winner != "R.O.N." {
-			candidate, err := r.store.FindCandidate(election.Result.Winner)
+			var candidate *storage.Candidate
+			candidate, err = r.store.FindCandidate(election.Result.Winner)
 			if err != nil {
-				return r.errorHandle(c, err)
+				fmt.Println(err)
+				candidate = &storage.Candidate{Name: election.Result.Winner}
 			}
 			election.Result.Winner = candidate.Name
 		}
