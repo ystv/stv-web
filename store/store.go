@@ -148,7 +148,7 @@ func (store *Store) FindCandidate(id string) (*storage.Candidate, error) {
 			return c1, nil
 		}
 	}
-	return nil, fmt.Errorf("unable to find candidate for FindCandidate")
+	return nil, fmt.Errorf("unable to find candidate for FindCandidate: %s", id)
 }
 
 func (store *Store) AddCandidate(candidate *storage.Candidate) (*storage.Candidate, error) {
