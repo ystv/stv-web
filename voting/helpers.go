@@ -53,20 +53,6 @@ func (rr *RoundResult) String() string {
 		)
 	}
 
-	//// Checking if all votes are integer numbers
-	//allInteger := true
-	//for _, result := range resultsWithBlankVotes {
-	//	if result.NumberOfVotes != math.Trunc(result.NumberOfVotes) {
-	//		allInteger = false
-	//		break
-	//	}
-	//}
-	//
-	//floatFormat := ".0f"
-	//if !allInteger {
-	//	floatFormat = ".2f"
-	//}
-
 	// Prepares the rows
 	rows := make([][]interface{}, 0)
 	for _, result := range resultsWithBlankVotes {
