@@ -2,13 +2,12 @@ package store
 
 import (
 	"fmt"
+	"github.com/ystv/stv_web/storage"
+	"google.golang.org/protobuf/proto"
 	"log"
 	"os"
 	"sync"
 	"time"
-
-	"github.com/ystv/stv_web/storage"
-	"google.golang.org/protobuf/proto"
 )
 
 // FileBackend Applications: apps, Prefix: prefix
@@ -27,7 +26,7 @@ func NewFileBackend(root bool) (Backend, error) {
 		fb = &FileBackend{path: "./db/store.db"}
 	}
 
-	state, err := fb.read()
+	state, err := fb.read(root)
 	if err != nil {
 		return nil, err
 	}
@@ -41,8 +40,26 @@ func NewFileBackend(root bool) (Backend, error) {
 }
 
 // Read parses the store state from a file
-func (fb *FileBackend) read() (*storage.STV, error) {
+func (fb *FileBackend) read(root bool) (*storage.STV, error) {
 	var stv storage.STV
+
+	if root {
+		_, err := os.Stat("/db")
+		if err != nil {
+			err = os.Mkdir("/db", 0777)
+			if err != nil {
+				return nil, fmt.Errorf("failed to make folder /db: %w", err)
+			}
+		}
+	} else {
+		_, err := os.Stat("./db")
+		if err != nil {
+			err = os.Mkdir("./db", 0777)
+			if err != nil {
+				return nil, fmt.Errorf("failed to make folder ./db: %w", err)
+			}
+		}
+	}
 
 	data, err := os.ReadFile(fb.path)
 	// Non-existing stv is ok
@@ -55,7 +72,7 @@ func (fb *FileBackend) read() (*storage.STV, error) {
 		}
 	}
 
-	log.Println("STV restored from", fb.path)
+	log.Printf("db file from: %s", fb.path)
 	return &stv, nil
 }
 
@@ -65,7 +82,7 @@ func (fb *FileBackend) save(stv *storage.STV) error {
 	if err != nil {
 		return fmt.Errorf("failed to encode stv: %w", err)
 	}
-	tmp := fmt.Sprintf(fb.path+".%v", time.Now())
+	tmp := fmt.Sprintf(fb.path+".%v", time.Now().Format("2006-01-02T15-04-05"))
 	if err := os.WriteFile(tmp, out, 0600); err != nil {
 		return fmt.Errorf("failed to write stv: %w", err)
 	}
