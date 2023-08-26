@@ -94,7 +94,7 @@ func main() {
 					BypassPassword: os.Getenv("STV_AD_BYPASS_PASSWORD"),
 					Server:         os.Getenv("STV_AD_SERVER"),
 					Port:           adPort,
-					BaseDN:         "",
+					BaseDN:         os.Getenv("STV_AD_BASE_DN"),
 					Security:       adSecurity,
 					Bind: structs.ADBind{
 						Username: os.Getenv("STV_AD_BIND_USERNAME"),
@@ -111,8 +111,6 @@ func main() {
 			}
 		}
 	}
-
-	log.Println(config)
 
 	if config.Server.Debug {
 		log.SetFlags(log.Llongfile)
