@@ -15,7 +15,6 @@ type (
 	Mailer struct {
 		*mail.SMTPClient
 		Defaults Defaults
-		Enabled  bool
 	}
 
 	// Defaults allows for default recipients to be set
@@ -67,9 +66,9 @@ func NewMailer(config MailConfig) (*Mailer, error) {
 
 	smtpClient, err := smtpServer.Connect()
 	if err != nil {
-		return &Mailer{nil, Defaults{}, false}, err
+		return nil, err
 	}
-	return &Mailer{smtpClient, Defaults{}, true}, nil
+	return &Mailer{smtpClient, Defaults{}}, nil
 }
 
 // AddDefaults adds the default recipients

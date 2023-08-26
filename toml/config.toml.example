@@ -18,6 +18,7 @@
 
 [mail]
     mail_host = "" # Mail server
-    mail_user = "" # Mail username
-    mail_pass = "" # Mail password
+    mail_username = "" # Mail username
+    mail_password = "" # Mail password
     mail_port = -1 # Mail port
+    mail_defailt_to = ""

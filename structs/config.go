@@ -12,7 +12,7 @@ type (
 
 	Server struct {
 		Debug      bool   `toml:"debug"`
-		Port       string `toml:"port"`
+		Address    string `toml:"address"`
 		DomainName string `toml:"domain_name"`
 	}
 
@@ -23,18 +23,19 @@ type (
 		Port           int    `toml:"ad_port"`
 		BaseDN         string `toml:"ad_base_dn"`
 		Security       int    `toml:"ad_security"`
-		Bind           adBind `toml:"bind"`
+		Bind           ADBind `toml:"bind"`
 	}
 
-	adBind struct {
+	ADBind struct {
 		Username string `toml:"ad_bind_username"`
 		Password string `toml:"ad_bind_password"`
 	}
 
 	Mail struct {
-		Host     string `toml:"mail_host"`
-		User     string `toml:"mail_user"`
-		Password string `toml:"mail_pass"`
-		Port     int    `toml:"mail_port"`
+		Host      string `toml:"mail_host"`
+		User      string `toml:"mail_username"`
+		Password  string `toml:"mail_password"`
+		Port      int    `toml:"mail_port"`
+		DefaultTo string `toml:"mail_default_to"`
 	}
 )

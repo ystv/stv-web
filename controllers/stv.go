@@ -7,6 +7,7 @@ import (
 
 type Repos struct {
 	Admin        *AdminRepo
+	Error        *ErrorRepo
 	Home         *HomeRepo
 	Registration *RegistrationRepo
 	Vote         *VoteRepo
@@ -15,6 +16,7 @@ type Repos struct {
 func NewRepos(controller Controller, mailer *utils.Mailer, store *store.Store, mailConfig utils.MailConfig) *Repos {
 	return &Repos{
 		Admin:        NewAdminRepo(controller, mailer, store, mailConfig),
+		Error:        NewErrorRepo(controller),
 		Home:         NewHomeRepo(controller, store),
 		Registration: NewRegistrationRepo(controller, store),
 		Vote:         NewVoteRepo(controller, store),

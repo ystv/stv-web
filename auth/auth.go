@@ -6,7 +6,7 @@ import (
 
 // Authenticate checks if the given credentials are valid, or returns an error if one occurred.
 // username may be either the sAMAccountName or the userPrincipalName.
-func Authenticate(config *Config, username, password string) (bool, error) {
+func Authenticate(config Config, username, password string) (bool, error) {
 	upn, err := config.UPN(username)
 	if err != nil {
 		return false, err
@@ -26,7 +26,7 @@ func Authenticate(config *Config, username, password string) (bool, error) {
 // entry is the *ldap.Entry that holds the DN and any request attributes of the user.
 // If groups is non-empty, userGroups will hold which of those groups the user is a member of.
 // groups can be a list of groups referenced by DN or cn and the format provided will be the format returned.
-func AuthenticateExtended(config *Config, username, password string, attrs, groups []string) (status bool, entry *ldap.Entry, userGroups []string, err error) {
+func AuthenticateExtended(config Config, username, password string, attrs, groups []string) (status bool, entry *ldap.Entry, userGroups []string, err error) {
 	upn, err := config.UPN(username)
 	if err != nil {
 		return false, nil, nil, err
