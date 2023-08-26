@@ -112,6 +112,8 @@ func main() {
 		}
 	}
 
+	log.Println(config)
+
 	if config.Server.Debug {
 		log.SetFlags(log.Llongfile)
 		fmt.Println()
