@@ -11,7 +11,7 @@ import (
 	"github.com/ystv/stv_web/middleware"
 	"github.com/ystv/stv_web/structs"
 	"github.com/ystv/stv_web/utils"
-	"io/fs"
+	"log"
 	"net/http"
 	"net/mail"
 )
@@ -21,22 +21,22 @@ var embeddedFiles embed.FS
 
 type (
 	Router struct {
-		config *structs.Config
-		port   string
-		repos  *controllers.Repos
-		router *echo.Echo
-		mailer *utils.Mailer
+		config  structs.Config
+		address string
+		repos   *controllers.Repos
+		router  *echo.Echo
+		mailer  *utils.Mailer
 	}
 	NewRouter struct {
-		Config *structs.Config
-		Port   string
-		Repos  *controllers.Repos
-		Debug  bool
-		Mailer *utils.Mailer
+		Config  structs.Config
+		Address string
+		Repos   *controllers.Repos
+		Debug   bool
+		Mailer  *utils.Mailer
 	}
 )
 
-func New(conf *NewRouter) *Router {
+func New(conf NewRouter) *Router {
 	r := &Router{
 		config: conf.Config,
 		router: echo.New(),
@@ -55,8 +55,8 @@ func New(conf *NewRouter) *Router {
 }
 
 func (r *Router) Start() error {
-	r.router.Logger.Error(r.router.Start(r.config.Server.Port))
-	return fmt.Errorf("failed to start router on port %s", r.config.Server.Port)
+	r.router.Logger.Error(r.router.Start(r.config.Server.Address))
+	return fmt.Errorf("failed to start router on port %s", r.config.Server.Address)
 }
 
 func (r *Router) loadRoutes() {
@@ -71,78 +71,7 @@ func (r *Router) loadRoutes() {
 	admin := r.router.Group("/admin")
 	{
 		if !r.router.Debug {
-			admin.Use(middleware2.BasicAuth(func(username, password string, c echo.Context) (bool, error) {
-				if username == r.config.AD.BypassUsername && password == r.config.AD.BypassPassword { // This is here because AD decided to shit the bed
-					return true, nil
-				}
-				config := &auth.Config{
-					Server:   r.config.AD.Server,
-					Port:     r.config.AD.Port,
-					BaseDN:   r.config.AD.BaseDN,
-					Security: auth.SecurityType(r.config.AD.Security),
-				}
-
-				conn, err := config.Connect()
-				if err != nil {
-					fmt.Printf("error connecting to server: %v\n", err)
-					return false, fmt.Errorf("error connecting to server: %w", err)
-				}
-				defer conn.Conn.Close()
-
-				status, err := conn.Bind(r.config.AD.Bind.Username, r.config.AD.Bind.Password)
-				if err != nil {
-					fmt.Printf("error binding to server: %v\n", err)
-					return false, fmt.Errorf("error binding to server: %w", err)
-				}
-
-				if !status {
-					return false, fmt.Errorf("error binding to server: invalid credentials")
-				}
-
-				status1, err := auth.Authenticate(config, username, password)
-				if err != nil {
-					fmt.Printf("unable to authenticate %s with error: %v\n", username, err)
-					return false, fmt.Errorf("unable to authenticate %s with error: %w", username, err)
-				}
-
-				if status1 {
-					var entry *ldap.Entry
-					if _, err = mail.ParseAddress(username); err == nil {
-						entry, err = conn.GetAttributes("userPrincipalName", username, []string{"memberOf"})
-					} else {
-						entry, err = conn.GetAttributes("samAccountName", username, []string{"memberOf"})
-					}
-					if err != nil {
-						fmt.Printf("error getting user groups: %v\n", err)
-						return false, fmt.Errorf("error getting user groups: %w", err)
-					}
-
-					dnGroups := entry.GetAttributeValues("memberOf")
-
-					if len(dnGroups) == 0 {
-						fmt.Println("BIND_SAM user not member of any groups")
-						return false, fmt.Errorf("BIND_SAM user not member of any groups")
-					}
-
-					stv := false
-
-					for _, group := range dnGroups {
-						if group == "CN=STV Admin,CN=Users,DC=ystv,DC=local" {
-							stv = true
-							return true, nil
-						}
-					}
-
-					if !stv {
-						fmt.Printf("STV not allowed for %s!\n", username)
-						return false, fmt.Errorf("STN not allowed for %s!\n", username)
-					}
-					return true, nil
-				} else {
-					fmt.Printf("user not authenticated: %s!\n", username)
-					return false, fmt.Errorf("user not authenticated: %s!\n", username)
-				}
-			}))
+			admin.Use(middleware2.BasicAuth(r.ldapServerAuth))
 		}
 		admin.GET("", r.repos.Admin.Admin)
 		admin.GET("/elections", r.repos.Admin.Elections)
@@ -184,16 +113,83 @@ func (r *Router) loadRoutes() {
 		vote.POST("", r.repos.Vote.AddVote)
 	}
 
-	assetHandler := http.FileServer(getFileSystem())
+	assetHandler := http.FileServer(http.FS(echo.MustSubFS(embeddedFiles, "public")))
 
 	r.router.GET("/public/*", echo.WrapHandler(http.StripPrefix("/public/", assetHandler)))
 }
 
-func getFileSystem() http.FileSystem {
-	fsys, err := fs.Sub(embeddedFiles, "public")
-	if err != nil {
-		panic(err)
+func (r *Router) ldapServerAuth(username, password string, _ echo.Context) (bool, error) {
+	if len(r.config.AD.BypassUsername) > 0 &&
+		len(r.config.AD.BypassPassword) > 0 &&
+		username == r.config.AD.BypassUsername &&
+		password == r.config.AD.BypassPassword {
+		log.Println("bypass used")
+		return true, nil
+	}
+	config := auth.Config{
+		Server:   r.config.AD.Server,
+		Port:     r.config.AD.Port,
+		BaseDN:   r.config.AD.BaseDN,
+		Security: auth.SecurityType(r.config.AD.Security),
 	}
 
-	return http.FS(fsys)
+	conn, err := config.Connect()
+	if err != nil {
+		return false, echo.NewHTTPError(http.StatusInternalServerError, fmt.Errorf("error connecting to server: %w", err))
+	}
+	defer func(Conn *ldap.Conn) {
+		err = Conn.Close()
+		if err != nil {
+			log.Printf("failed to close to LDAP server: %+v", err)
+		}
+	}(conn.Conn)
+
+	status, err := conn.Bind(r.config.AD.Bind.Username, r.config.AD.Bind.Password)
+	if err != nil {
+		return false, echo.NewHTTPError(http.StatusInternalServerError, fmt.Errorf("error binding to server: %w", err))
+	}
+
+	if !status {
+		return false, echo.NewHTTPError(http.StatusInternalServerError, fmt.Errorf("error binding to server: invalid credentials"))
+	}
+
+	status1, err := auth.Authenticate(config, username, password)
+	if err != nil {
+		return false, echo.NewHTTPError(http.StatusUnauthorized, fmt.Errorf("unable to authenticate %s with error: %w", username, err))
+	}
+
+	if status1 {
+		var entry *ldap.Entry
+		if _, err = mail.ParseAddress(username); err == nil {
+			entry, err = conn.GetAttributes("userPrincipalName", username, []string{"memberOf"})
+		} else {
+			entry, err = conn.GetAttributes("samAccountName", username, []string{"memberOf"})
+		}
+		if err != nil {
+			return false, echo.NewHTTPError(http.StatusInternalServerError, fmt.Errorf("error getting user groups: %w", err))
+		}
+
+		dnGroups := entry.GetAttributeValues("memberOf")
+
+		if len(dnGroups) == 0 {
+			return false, echo.NewHTTPError(http.StatusUnauthorized, fmt.Errorf("BIND_SAM user not member of any groups"))
+		}
+
+		stv := false
+
+		for _, group := range dnGroups {
+			if group == "CN=STV Admin,CN=Users,DC=ystv,DC=local" {
+				stv = true
+				return true, nil
+			}
+		}
+
+		if !stv {
+			return false, echo.NewHTTPError(http.StatusUnauthorized, fmt.Errorf("STV not allowed for %s!\n", username))
+		}
+		log.Printf("%s is authenticated", username)
+		return true, nil
+	} else {
+		return false, echo.NewHTTPError(http.StatusUnauthorized, fmt.Errorf("user not authenticated: %s!\n", username))
+	}
 }
