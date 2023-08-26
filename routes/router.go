@@ -2,6 +2,7 @@ package routes
 
 import (
 	"embed"
+	"encoding/json"
 	"fmt"
 	"github.com/go-ldap/ldap/v3"
 	"github.com/labstack/echo/v4"
@@ -112,6 +113,25 @@ func (r *Router) loadRoutes() {
 		vote.GET("", r.repos.Vote.Vote)
 		vote.POST("", r.repos.Vote.AddVote)
 	}
+
+	r.router.GET("/api/health", func(c echo.Context) error {
+		marshal, err := json.Marshal(struct {
+			Status int `json:"status"`
+		}{
+			Status: http.StatusOK,
+		})
+		if err != nil {
+			log.Println(err)
+			return &echo.HTTPError{
+				Code:     http.StatusBadRequest,
+				Message:  err.Error(),
+				Internal: err,
+			}
+		}
+
+		c.Response().Header().Set("Content-Type", "application/json")
+		return c.JSON(http.StatusOK, marshal)
+	})
 
 	assetHandler := http.FileServer(http.FS(echo.MustSubFS(embeddedFiles, "public")))
 
