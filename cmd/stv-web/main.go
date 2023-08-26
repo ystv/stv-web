@@ -25,12 +25,12 @@ func main() {
 
 	_, err = os.ReadFile("/toml/config.toml")
 	if err == nil {
-		_, err = toml.DecodeFile("/toml/config.toml", config)
+		_, err = toml.DecodeFile("/toml/config.toml", &config)
 		root = true
 	} else {
 		_, err = os.ReadFile("./toml/config.toml")
 		if err == nil {
-			_, err = toml.DecodeFile("./toml/config.toml", config)
+			_, err = toml.DecodeFile("./toml/config.toml", &config)
 		}
 	}
 
