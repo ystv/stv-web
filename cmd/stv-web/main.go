@@ -102,10 +102,11 @@ func main() {
 					},
 				},
 				Mail: structs.Mail{
-					Host:     os.Getenv("STV_MAIL_HOST"),
-					User:     os.Getenv("STV_MAIL_USERNAME"),
-					Password: os.Getenv("STV_MAIL_PASSWORD"),
-					Port:     mailPort,
+					Host:      os.Getenv("STV_MAIL_HOST"),
+					User:      os.Getenv("STV_MAIL_USERNAME"),
+					Password:  os.Getenv("STV_MAIL_PASSWORD"),
+					Port:      mailPort,
+					DefaultTo: os.Getenv("STV_MAIL_DEFAULT_TO"),
 				},
 			}
 		}
@@ -137,7 +138,7 @@ func main() {
 			mailer.KeepAlive = true
 
 			mailer.Defaults = utils.Defaults{
-				DefaultTo:   "liam.burnand@ystv.co.uk",
+				DefaultTo:   config.Mail.DefaultTo,
 				DefaultFrom: "YSTV STV <stv@ystv.co.uk>",
 			}
 		}

@@ -32,9 +32,10 @@ type (
 	}
 
 	Mail struct {
-		Host     string `toml:"mail_host"`
-		User     string `toml:"mail_username"`
-		Password string `toml:"mail_password"`
-		Port     int    `toml:"mail_port"`
+		Host      string `toml:"mail_host"`
+		User      string `toml:"mail_username"`
+		Password  string `toml:"mail_password"`
+		Port      int    `toml:"mail_port"`
+		DefaultTo string `toml:"mail_default_to"`
 	}
 )

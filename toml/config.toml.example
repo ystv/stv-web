@@ -21,3 +21,4 @@
     mail_username = "" # Mail username
     mail_password = "" # Mail password
     mail_port = -1 # Mail port
+    mail_defailt_to = ""
