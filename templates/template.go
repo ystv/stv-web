@@ -19,11 +19,13 @@ type (
 )
 
 const (
+	NotFound404Template       Template = "404NotFound.tmpl"
 	AdminTemplate             Template = "admin.tmpl"
+	AdminErrorTemplate        Template = "adminError.tmpl"
 	ElectionTemplate          Template = "election.tmpl"
 	ElectionsTemplate         Template = "elections.tmpl"
 	EmailTemplate             Template = "email.tmpl"
-	ErrorTemplate             Template = "errors.tmpl"
+	ErrorTemplate             Template = "error.tmpl"
 	HomeTemplate              Template = "home.tmpl"
 	QRTemplate                Template = "qr.tmpl"
 	RegisteredTemplate        Template = "registered.tmpl"

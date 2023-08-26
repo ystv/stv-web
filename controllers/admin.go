@@ -822,7 +822,7 @@ func (r *AdminRepo) errorHandle(c echo.Context, err error) error {
 		Error: err.Error(),
 	}
 	fmt.Println(data.Error)
-	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.ErrorTemplate)
+	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.AdminErrorTemplate)
 	if err != nil {
 		fmt.Println(err)
 		return err

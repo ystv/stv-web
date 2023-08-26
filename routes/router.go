@@ -60,9 +60,9 @@ func (r *Router) Start() error {
 }
 
 func (r *Router) loadRoutes() {
-	r.router.RouteNotFound("/*", func(c echo.Context) error {
-		return c.JSON(http.StatusNotFound, utils.Error{Error: "Not found"})
-	})
+	r.router.RouteNotFound("/*", r.repos.Error.Error404)
+
+	r.router.HTTPErrorHandler = r.repos.Error.CustomHTTPErrorHandler
 
 	r.router.Use(middleware2.BodyLimit("15M"))
 
