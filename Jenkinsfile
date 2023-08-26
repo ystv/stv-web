@@ -1,76 +1,69 @@
+String registryEndpoint = 'registry.comp.ystv.co.uk'
+
+def branch = env.BRANCH_NAME.replaceAll("/", "_")
+def image
+String imageName = "ystv/stv-web:${branch}-${env.BUILD_ID}"
+
 pipeline {
-    agent any
+  agent {
+    label 'docker'
+  }
 
-    environment {
-        REGISTRY_ENDPOINT = credentials('docker-registry-endpoint')
+  environment {
+    REGISTRY_ENDPOINT = credentials('docker-registry-endpoint')
+  }
+
+  stages {
+    stage('Build image') {
+      steps {
+        script {
+          docker.withRegistry('https://' + registryEndpoint, 'docker-registry') {
+            image = docker.build(imageName, ".")
+          }
+        }
+      }
     }
 
-    stages {
-        stage('Update Components') {
-            steps {
-                sh 'docker pull golang:1.20.4-alpine3.16'
+    stage('Push image to registry') {
+      steps {
+        script {
+          docker.withRegistry('https://' + registryEndpoint, 'docker-registry') {
+            image.push()
+            if (env.BRANCH_IS_PRIMARY) {
+              image.push('latest')
             }
+          }
         }
-        stage('Build') {
-            steps {
-                sh 'docker build -t $REGISTRY_ENDPOINT/ystv/stv-web:$BUILD_ID .'
-            }
-        }
-        stage('Registry Upload') {
-            steps {
-                sh 'docker push $REGISTRY_ENDPOINT/ystv/stv-web:$BUILD_ID' // Uploaded to registry
-            }
-        }
-        stage('Deploy') {
-            stages {
-                stage('Staging') {
-                    when {
-                        branch 'master'
-                        not {
-                            expression { return env.TAG_NAME ==~ /v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)/ }
-                        }
-                    }
-                    environment {
-                        TARGET_PATH = credentials('moss-server-path-stv')
-                    }
-                    steps {
-                        script {
-                            sh 'docker pull $REGISTRY_ENDPOINT/ystv/stv-web:$BUILD_ID'
-                            sh 'docker rm -f ystv-stv-web'
-                            sh 'docker run -d -p 6691:6691 --name ystv-stv-web -v $TARGET_PATH/db:/db -v $TARGET_PATH/toml:/toml --restart=always $REGISTRY_ENDPOINT/ystv/stv-web:$BUILD_ID'
-                            sh 'docker image prune -a -f --filter "label=site=stv-web"'
-                        }
-                    }
-                }
-                stage('Production') {
-                    when {
-                        expression { return env.TAG_NAME ==~ /v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)/ } // Checking if it is main semantic version release
-                    }
-                    environment {
-                        TARGET_PATH = credentials('moss-server-path-stv')
-                    }
-                    steps {
-                        script {
-                            sh 'docker pull $REGISTRY_ENDPOINT/ystv/stv-web:$BUILD_ID'
-                            sh 'docker rm -f ystv-stv-web'
-                            sh 'docker run -d -p 6691:6691 --name ystv-stv-web -v $TARGET_PATH/db:/db -v $TARGET_PATH/toml:/toml --restart=always $REGISTRY_ENDPOINT/ystv/stv-web:$BUILD_ID'
-                            sh 'docker image prune -a -f --filter "label=site=stv-web"'
-                        }
-                    }
-                }
-            }
-        }
+      }
     }
-    post {
-        success {
-            echo 'Very cash-money'
+
+    stage('Deploy') {
+      stages {
+        stage('Development') {
+          when {
+            expression { env.BRANCH_IS_PRIMARY }
+          }
+          steps {
+            build(job: 'Deploy Nomad Job', parameters: [
+              string(name: 'JOB_FILE', value: 'stv-dev.nomad'),
+              text(name: 'TAG_REPLACEMENTS', value: "${registryEndpoint}/${imageName}")
+            ])
+          }
         }
-        failure {
-            echo 'That is not ideal, cheeky bugger'
+
+        stage('Production') {
+          when {
+            // Checking if it is semantic version release.
+            expression { return env.TAG_NAME ==~ /v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)/ }
+          }
+          steps {
+            build(job: 'Deploy Nomad Job', parameters: [
+              string(name: 'JOB_FILE', value: 'stv-prod.nomad'),
+              text(name: 'TAG_REPLACEMENTS', value: "${registryEndpoint}/${imageName}")
+            ])
+          }
         }
-        always {
-            sh "docker image prune -f --filter label=site=stv-web --filter label=stage=builder" // Removing the local builder image
-            sh 'docker image prune -a -f --filter "label=site=stv-web"' // remove old image
-        }
+      }
     }
+  }
 }
