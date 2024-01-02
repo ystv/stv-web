@@ -89,9 +89,9 @@ func SingleTransferableVote(candidates []*Candidate, ballots []*Ballot, numberOf
 
 		seatsLeft = numberOfSeats - manager.GetNumberOfElectedCandidates()
 		if seatsLeft == 0 {
-			candidatesInRace := manager.GetCandidatesInRace()
+			candidatesInRace = manager.GetCandidatesInRace()
 			for i := len(candidatesInRace) - 1; i >= 0; i-- {
-				candidatesToReject = append(candidatesToElect, candidatesInRace[i])
+				candidatesToReject = append(candidatesToReject, candidatesInRace[i])
 				if err := manager.RejectCandidate(candidatesInRace[i]); err != nil {
 					return nil, err
 				}
