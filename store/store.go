@@ -18,14 +18,14 @@ func NewStore(root bool) (*Store, error) {
 	return &Store{backend: backend}, nil
 }
 
-func max(a, b uint64) uint64 {
+func maxNum(a, b uint64) uint64 {
 	if a < b {
 		return b
 	}
 	return a
 }
 
-func (store *Store) GetBallotsElectionId(id uint64) ([]*storage.Ballot, error) {
+func (store *Store) GetBallotsElectionID(id uint64) ([]*storage.Ballot, error) {
 	stv, err := store.Get()
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func (store *Store) AddBallot(ballot *storage.Ballot) (*storage.Ballot, error) {
 	var id uint64
 	id = 1
 	for _, e := range stv.Ballots {
-		id = max(id, e.Id)
+		id = maxNum(id, e.Id)
 		if e.Election == ballot.Election && e.Voter == ballot.Voter {
 			return nil, fmt.Errorf("ballot already exists for AddBallot")
 		}
@@ -124,7 +124,7 @@ func (store *Store) DeleteBallot(id uint64) error {
 	return nil
 }
 
-func (store *Store) GetCandidatesElectionId(id uint64) ([]*storage.Candidate, error) {
+func (store *Store) GetCandidatesElectionID(id uint64) ([]*storage.Candidate, error) {
 	stv, err := store.Get()
 	if err != nil {
 		return nil, err
@@ -232,7 +232,7 @@ func (store *Store) AddElection(election *storage.Election) (*storage.Election, 
 	var id uint64
 	id = 1
 	for _, e := range stv.Elections {
-		id = max(id, e.Id)
+		id = maxNum(id, e.Id)
 	}
 
 	election.Id = id + 1
@@ -398,7 +398,7 @@ func (store *Store) DeleteAllElections() error {
 	return nil
 }
 
-func (store *Store) GetURLsElectionId(id uint64) ([]*storage.URL, error) {
+func (store *Store) GetURLsElectionID(id uint64) ([]*storage.URL, error) {
 	stv, err := store.Get()
 	if err != nil {
 		return nil, err
