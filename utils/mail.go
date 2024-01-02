@@ -59,7 +59,8 @@ func NewMailer(config MailConfig) (*Mailer, error) {
 		ConnectTimeout: 10 * time.Second,
 		SendTimeout:    10 * time.Second,
 		KeepAlive:      true,
-		TLSConfig:      &tls.Config{InsecureSkipVerify: true},
+		//nolint:gosec
+		TLSConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 
 	smtpServer.KeepAlive = true

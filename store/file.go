@@ -2,12 +2,14 @@ package store
 
 import (
 	"fmt"
-	"github.com/ystv/stv_web/storage"
-	"google.golang.org/protobuf/proto"
 	"log"
 	"os"
 	"sync"
 	"time"
+
+	"google.golang.org/protobuf/proto"
+
+	"github.com/ystv/stv_web/storage"
 )
 
 // FileBackend Applications: apps, Prefix: prefix

@@ -2,17 +2,19 @@ package controllers
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	"strconv"
+	"unicode"
+
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+
 	"github.com/ystv/stv_web/storage"
 	"github.com/ystv/stv_web/store"
 	"github.com/ystv/stv_web/templates"
 	"github.com/ystv/stv_web/utils"
 	"github.com/ystv/stv_web/voting"
-	"log"
-	"strconv"
-	"strings"
-	"unicode"
 )
 
 type AdminRepo struct {
@@ -42,14 +44,19 @@ func (r *AdminRepo) Admin(c echo.Context) error {
 	closed := 0
 	errInt := 0
 	for _, e := range elections {
-		if !e.Open && !e.Closed {
+		switch {
+		case !e.Open && !e.Closed:
 			toBeOpened++
-		} else if e.Open && !e.Closed {
+			break
+		case e.Open && !e.Closed:
 			open++
-		} else if !e.Open && e.Closed {
+			break
+		case !e.Open && e.Closed:
 			closed++
-		} else {
+			break
+		default:
 			errInt++
+			break
 		}
 	}
 	temp, err := r.store.GetVoters()
@@ -95,8 +102,7 @@ func (r *AdminRepo) AddCandidate(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 	temp := c.Param("id")
-	temp1 := []rune(temp)
-	for _, r2 := range temp1 {
+	for _, r2 := range temp {
 		if !unicode.IsNumber(r2) {
 			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
 		}
@@ -123,7 +129,7 @@ func (r *AdminRepo) AddCandidate(c echo.Context) error {
 		return r.errorHandle(c, fmt.Errorf("cannot add candidate to closed election"))
 	}
 
-	candidates, err := r.store.GetCandidatesElectionId(id)
+	candidates, err := r.store.GetCandidatesElectionID(id)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -204,8 +210,7 @@ func (r *AdminRepo) Elections(c echo.Context) error {
 
 func (r *AdminRepo) Election(c echo.Context) error {
 	temp := c.Param("id")
-	temp1 := []rune(temp)
-	for _, r2 := range temp1 {
+	for _, r2 := range temp {
 		if !unicode.IsNumber(r2) {
 			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
 		}
@@ -222,7 +227,7 @@ func (r *AdminRepo) Election(c echo.Context) error {
 	if len(c.Request().FormValue("error")) > 0 {
 		err1 = c.Request().FormValue("error")
 	}
-	candidates, err := r.store.GetCandidatesElectionId(id)
+	candidates, err := r.store.GetCandidatesElectionID(id)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -239,7 +244,7 @@ func (r *AdminRepo) Election(c echo.Context) error {
 	}
 	noOfBallots := 0
 	if election.Open || election.Closed {
-		ballots, err := r.store.GetBallotsElectionId(election.Id)
+		ballots, err := r.store.GetBallotsElectionID(election.Id)
 		if err != nil {
 			return r.errorHandle(c, err)
 		}
@@ -278,7 +283,7 @@ func (r *AdminRepo) election(c echo.Context, id uint64) error {
 	if len(c.Request().FormValue("error")) > 0 {
 		err1 = c.Request().FormValue("error")
 	}
-	candidates, err := r.store.GetCandidatesElectionId(id)
+	candidates, err := r.store.GetCandidatesElectionID(id)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -295,7 +300,7 @@ func (r *AdminRepo) election(c echo.Context, id uint64) error {
 	}
 	noOfBallots := 0
 	if election.Open || election.Closed {
-		ballots, err := r.store.GetBallotsElectionId(election.Id)
+		ballots, err := r.store.GetBallotsElectionID(election.Id)
 		if err != nil {
 			return r.errorHandle(c, err)
 		}
@@ -342,7 +347,7 @@ func (r *AdminRepo) AddElection(c echo.Context) error {
 	if len(tempRon) > 0 {
 		ron = true
 	}
-	if len(name) <= 0 {
+	if len(name) == 0 {
 		return r.errorHandle(c, fmt.Errorf("name and description need to be filled"))
 	}
 	election := &storage.Election{
@@ -364,8 +369,7 @@ func (r *AdminRepo) EditElection(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 	temp := c.Param("id")
-	temp1 := []rune(temp)
-	for _, r2 := range temp1 {
+	for _, r2 := range temp {
 		if !unicode.IsNumber(r2) {
 			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
 		}
@@ -382,7 +386,7 @@ func (r *AdminRepo) EditElection(c echo.Context) error {
 	if len(tempRon) > 0 {
 		ron = true
 	}
-	if len(name) <= 0 {
+	if len(name) == 0 {
 		return r.errorHandle(c, fmt.Errorf("name and description need to be filled"))
 	}
 	election := &storage.Election{
@@ -397,15 +401,12 @@ func (r *AdminRepo) EditElection(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
-	strings.ReplaceAll(c.Request().URL.Path, "/edit", "")
-
-	return r.election(c, election.Id)
+	return c.Redirect(http.StatusFound, fmt.Sprintf("admin/election/%d", election.Id))
 }
 
 func (r *AdminRepo) OpenElection(c echo.Context) error {
 	temp := c.Param("id")
-	temp1 := []rune(temp)
-	for _, r2 := range temp1 {
+	for _, r2 := range temp {
 		if !unicode.IsNumber(r2) {
 			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
 		}
@@ -426,7 +427,7 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 		return r.errorHandle(c, fmt.Errorf("cannot reopen election that has been closed"))
 	}
 
-	candidates, err := r.store.GetCandidatesElectionId(id)
+	candidates, err := r.store.GetCandidatesElectionID(id)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -441,6 +442,9 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 	}
 
 	voters, err := r.store.GetVoters()
+	if err != nil {
+		return r.errorHandle(c, fmt.Errorf("failed to get voters: %w", err))
+	}
 
 	r.mailer, err = utils.NewMailer(r.mailConfig)
 	if err != nil {
@@ -453,9 +457,7 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 
 	go r.sendEmailThread(voters, election)
 
-	strings.ReplaceAll(c.Request().URL.Path, "/open", "")
-
-	return r.election(c, election.Id)
+	return c.Redirect(http.StatusFound, fmt.Sprintf("admin/election/%d", election.Id))
 }
 
 func (r *AdminRepo) sendEmailThread(voters []*storage.Voter, election *storage.Election) {
@@ -521,8 +523,7 @@ func (r *AdminRepo) sendEmailThread(voters []*storage.Voter, election *storage.E
 
 func (r *AdminRepo) CloseElection(c echo.Context) error {
 	temp := c.Param("id")
-	temp1 := []rune(temp)
-	for _, r2 := range temp1 {
+	for _, r2 := range temp {
 		if !unicode.IsNumber(r2) {
 			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
 		}
@@ -543,19 +544,19 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 		return r.errorHandle(c, fmt.Errorf("cannot reclose election that has been closed"))
 	}
 
-	ballots, err := r.store.GetBallotsElectionId(id)
+	ballots, err := r.store.GetBallotsElectionID(id)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
 
 	ron := &voting.Candidate{Name: "R.O.N."}
 
-	var candidates []*voting.Candidate
+	candidates := make([]*voting.Candidate, 0)
 	if election.Ron {
 		candidates = append(candidates, ron)
 	}
 
-	candidatesStore, err := r.store.GetCandidatesElectionId(id)
+	candidatesStore, err := r.store.GetCandidatesElectionID(id)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -564,7 +565,7 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 		candidates = append(candidates, &voting.Candidate{Name: c1.Id})
 	}
 
-	var ballotsVoting []*voting.Ballot
+	ballotsVoting := make([]*voting.Ballot, 0, len(ballots))
 	for _, ballot := range ballots {
 		var c2 []*voting.Candidate
 		for i := uint64(0); i < uint64(len(ballot.Choice)); i++ {
@@ -580,7 +581,7 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 
 	electionResults, err := voting.SingleTransferableVote(candidates, ballotsVoting, 1, voting.DefaultSingleTransferableVoteOptions())
 	if err != nil {
-		return r.errorHandle(c, fmt.Errorf("election failed: %v", err))
+		return r.errorHandle(c, fmt.Errorf("election failed: %w", err))
 	}
 
 	result := &storage.Result{}
@@ -621,15 +622,12 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
-	strings.ReplaceAll(c.Request().URL.Path, "/close", "")
-
-	return r.election(c, election.Id)
+	return c.Redirect(http.StatusFound, fmt.Sprintf("admin/election/%d", election.Id))
 }
 
 func (r *AdminRepo) Exclude(c echo.Context) error {
 	temp := c.Param("id")
-	temp1 := []rune(temp)
-	for _, r2 := range temp1 {
+	for _, r2 := range temp {
 		if !unicode.IsNumber(r2) {
 			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
 		}
@@ -674,8 +672,7 @@ func (r *AdminRepo) Exclude(c echo.Context) error {
 
 func (r *AdminRepo) Include(c echo.Context) error {
 	temp := c.Param("id")
-	temp1 := []rune(temp)
-	for _, r2 := range temp1 {
+	for _, r2 := range temp {
 		if !unicode.IsNumber(r2) {
 			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
 		}
@@ -721,8 +718,7 @@ func (r *AdminRepo) Include(c echo.Context) error {
 
 func (r *AdminRepo) DeleteElection(c echo.Context) error {
 	temp := c.Param("id")
-	temp1 := []rune(temp)
-	for _, r2 := range temp1 {
+	for _, r2 := range temp {
 		if !unicode.IsNumber(r2) {
 			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
 		}
@@ -777,7 +773,7 @@ func (r *AdminRepo) AddVoter(c echo.Context) error {
 	}
 	email := c.Request().FormValue("email")
 	name := c.Request().FormValue("name")
-	if len(name) <= 0 || len(email) <= 0 {
+	if len(name) == 0 || len(email) == 0 {
 		return r.errorHandle(c, fmt.Errorf("name and email need to be filled"))
 	}
 	_, err = r.store.AddVoter(&storage.Voter{
@@ -808,7 +804,7 @@ func (r *AdminRepo) SwitchRegistration(c echo.Context) error {
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	allow, err = r.store.SetAllowRegistration(!allow)
+	_, err = r.store.SetAllowRegistration(!allow)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}

@@ -2,9 +2,11 @@ package controllers
 
 import (
 	"errors"
-	"github.com/labstack/echo/v4"
-	"github.com/ystv/stv_web/templates"
 	"log"
+
+	"github.com/labstack/echo/v4"
+
+	"github.com/ystv/stv_web/templates"
 )
 
 type ErrorRepo struct {

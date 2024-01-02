@@ -2,7 +2,9 @@ package controllers
 
 import (
 	"fmt"
+
 	"github.com/labstack/echo/v4"
+
 	"github.com/ystv/stv_web/store"
 	"github.com/ystv/stv_web/templates"
 )

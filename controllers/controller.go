@@ -1,23 +1,25 @@
 package controllers
 
 import (
+	"net/http"
+
 	"github.com/labstack/echo/v4"
+
 	"github.com/ystv/stv_web/templates"
 	"github.com/ystv/stv_web/utils"
-	"net/http"
 )
 
 // ControllerInterface is the interface to which controllers adhere.
 type ControllerInterface interface {
-	Get()     //method = GET processing
-	Post()    //method = POST processing
-	Delete()  //method = DELETE processing
-	Put()     //method = PUT handling
-	Head()    //method = HEAD processing
-	Patch()   //method = PATCH treatment
-	Options() //method = OPTIONS processing
-	Connect() //method = CONNECT processing
-	Trace()   //method = TRACE processing
+	Get()     // method = GET processing
+	Post()    // method = POST processing
+	Delete()  // method = DELETE processing
+	Put()     // method = PUT handling
+	Head()    // method = HEAD processing
+	Patch()   // method = PATCH treatment
+	Options() // method = OPTIONS processing
+	Connect() // method = CONNECT processing
+	Trace()   // method = TRACE processing
 }
 
 // Controller is the base type of controllers in the 2016site architecture.

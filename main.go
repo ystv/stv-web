@@ -2,17 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/BurntSushi/toml"
-	"github.com/joho/godotenv"
-	"github.com/ystv/stv_web/controllers"
-	"github.com/ystv/stv_web/routes"
-	"github.com/ystv/stv_web/store"
-	"github.com/ystv/stv_web/structs"
-	_ "github.com/ystv/stv_web/templates"
-	"github.com/ystv/stv_web/utils"
 	"log"
 	"os"
 	"strconv"
+
+	"github.com/BurntSushi/toml"
+	"github.com/joho/godotenv"
+
+	"github.com/ystv/stv_web/controllers"
+	"github.com/ystv/stv_web/store"
+	"github.com/ystv/stv_web/structs"
+	"github.com/ystv/stv_web/utils"
 )
 
 func main() {
@@ -47,37 +47,47 @@ func main() {
 	stvAddress := os.Getenv("STV_ADDRESS")
 	domainName := os.Getenv("STV_DOMAIN_NAME")
 
-	if !global && !local && !tomlUsed && stvAddress == "" && domainName == "" {
+	switch {
+	case !global && !local && !tomlUsed && stvAddress == "" && domainName == "":
 		log.Fatal("unable to find env files, toml file or env variables")
-	} else if tomlUsed {
+	case tomlUsed:
 		log.Println("using toml file")
-	} else if !global && !local {
+		break
+	case !global && !local:
 		log.Println("using env variables")
-	} else if local && global {
+		break
+	case local && global:
 		log.Println("using global and local env files")
-	} else if !local {
+		break
+	case !local:
 		log.Println("using global env file")
-	} else {
+		break
+	default:
 		log.Println("using local env file")
+		break
 	}
 
 	if !tomlUsed {
-		debug, err := strconv.ParseBool(os.Getenv("STV_DEBUG"))
+		var debug bool
+		debug, err = strconv.ParseBool(os.Getenv("STV_DEBUG"))
 		if err != nil {
 			debug = false
 		}
 
-		adPort, err := strconv.Atoi(os.Getenv("STV_AD_PORT"))
+		var adPort int
+		adPort, err = strconv.Atoi(os.Getenv("STV_AD_PORT"))
 		if err != nil {
 			log.Fatalf("failed to get ad port env: %+v", err)
 		}
 
-		adSecurity, err := strconv.Atoi(os.Getenv("STV_AD_SECURITY"))
+		var adSecurity int
+		adSecurity, err = strconv.Atoi(os.Getenv("STV_AD_SECURITY"))
 		if err != nil {
 			log.Fatalf("failed to get ad security env: %+v", err)
 		}
 
-		mailPort, err := strconv.Atoi(os.Getenv("STV_MAIL_PORT"))
+		var mailPort int
+		mailPort, err = strconv.Atoi(os.Getenv("STV_MAIL_PORT"))
 		if err != nil {
 			log.Fatalf("failed to get mail port env: %+v", err)
 		}

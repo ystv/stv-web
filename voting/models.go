@@ -1,6 +1,7 @@
 package voting
 
 import (
+	//nolint:gosec
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
@@ -20,6 +21,7 @@ func (c *Candidate) String() string {
 }
 
 func (c *Candidate) Hash() string {
+	//nolint:gosec
 	hasher := sha1.New()
 	hasher.Write([]byte(c.Name))
 	return hex.EncodeToString(hasher.Sum(nil))
@@ -53,10 +55,10 @@ func hasDuplicates(candidates []*Candidate) bool {
 }
 
 func (b *Ballot) String() string {
-	var candidatesNames []string
+	candidateNames := make([]string, 0, len(b.RankedCandidates))
 	for _, c := range b.RankedCandidates {
-		candidatesNames = append(candidatesNames, c.Name)
+		candidateNames = append(candidateNames, c.Name)
 	}
-	candidates := strings.Join(candidatesNames, ", ")
+	candidates := strings.Join(candidateNames, ", ")
 	return fmt.Sprintf("Ballot(%s)", candidates)
 }

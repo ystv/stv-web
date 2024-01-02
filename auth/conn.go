@@ -20,43 +20,47 @@ func (c *Config) Connect() (*Conn, error) {
 	case SecurityNone:
 		conn, err := ldap.Dial("tcp", fmt.Sprintf("%s:%d", c.Server, c.Port))
 		if err != nil {
-			return nil, fmt.Errorf("Connection error: %w", err)
+			return nil, fmt.Errorf("connection error: %w", err)
 		}
 		return &Conn{Conn: conn, Config: c}, nil
 	case SecurityTLS:
+		//nolint:gosec
 		conn, err := ldap.DialTLS("tcp", fmt.Sprintf("%s:%d", c.Server, c.Port), &tls.Config{ServerName: c.Server, RootCAs: c.RootCAs})
 		if err != nil {
-			return nil, fmt.Errorf("Connection error: %w", err)
+			return nil, fmt.Errorf("connection error: %w", err)
 		}
 		return &Conn{Conn: conn, Config: c}, nil
 	case SecurityStartTLS:
 		conn, err := ldap.Dial("tcp", fmt.Sprintf("%s:%d", c.Server, c.Port))
 		if err != nil {
-			return nil, fmt.Errorf("Connection error: %w", err)
+			return nil, fmt.Errorf("connection error: %w", err)
 		}
+		//nolint:gosec
 		err = conn.StartTLS(&tls.Config{ServerName: c.Server, RootCAs: c.RootCAs})
 		if err != nil {
-			return nil, fmt.Errorf("Connection error: %w", err)
+			return nil, fmt.Errorf("connection error: %w", err)
 		}
 		return &Conn{Conn: conn, Config: c}, nil
 	case SecurityInsecureTLS:
+		//nolint:gosec
 		conn, err := ldap.DialTLS("tcp", fmt.Sprintf("%s:%d", c.Server, c.Port), &tls.Config{ServerName: c.Server, InsecureSkipVerify: true})
 		if err != nil {
-			return nil, fmt.Errorf("Connection error: %w", err)
+			return nil, fmt.Errorf("connection error: %w", err)
 		}
 		return &Conn{Conn: conn, Config: c}, nil
 	case SecurityInsecureStartTLS:
 		conn, err := ldap.Dial("tcp", fmt.Sprintf("%s:%d", c.Server, c.Port))
 		if err != nil {
-			return nil, fmt.Errorf("Connection error: %w", err)
+			return nil, fmt.Errorf("connection error: %w", err)
 		}
+		//nolint:gosec
 		err = conn.StartTLS(&tls.Config{ServerName: c.Server, InsecureSkipVerify: true})
 		if err != nil {
-			return nil, fmt.Errorf("Connection error: %w", err)
+			return nil, fmt.Errorf("connection error: %w", err)
 		}
 		return &Conn{Conn: conn, Config: c}, nil
 	default:
-		return nil, errors.New("Configuration error: invalid SecurityType")
+		return nil, errors.New("configuration error: invalid SecurityType")
 	}
 }
 
@@ -69,12 +73,13 @@ func (c *Conn) Bind(upn, password string) (bool, error) {
 
 	err := c.Conn.Bind(upn, password)
 	if err != nil {
-		if e, ok := err.(*ldap.Error); ok {
+		var e *ldap.Error
+		if errors.As(err, &e) {
 			if e.ResultCode == ldap.LDAPResultInvalidCredentials {
 				return false, nil
 			}
 		}
-		return false, fmt.Errorf("Bind error (%s): %w", upn, err)
+		return false, fmt.Errorf("bind error (%s): %w", upn, err)
 	}
 
 	return true, nil

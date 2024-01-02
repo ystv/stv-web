@@ -2,11 +2,13 @@ package controllers
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/labstack/echo/v4"
+
 	"github.com/ystv/stv_web/storage"
 	"github.com/ystv/stv_web/store"
 	"github.com/ystv/stv_web/templates"
-	"net/http"
 )
 
 type RegistrationRepo struct {
@@ -71,7 +73,7 @@ func (r *RegistrationRepo) AddVoter(c echo.Context) error {
 	}
 	email := c.Request().FormValue("email")
 	name := c.Request().FormValue("name")
-	if len(name) <= 0 || len(email) <= 0 {
+	if len(name) == 0 || len(email) == 0 {
 		return r.errorHandle(c, fmt.Errorf("name and email need to be filled"))
 	}
 	_, err = r.store.AddVoter(&storage.Voter{

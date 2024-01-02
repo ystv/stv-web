@@ -2,11 +2,12 @@ package voting
 
 import (
 	"fmt"
-	"github.com/bndr/gotabulate"
 	"math"
 	"math/rand"
 	"sort"
 	"time"
+
+	"github.com/bndr/gotabulate"
 )
 
 const float64EqualityThreshold = 1e-9
@@ -135,15 +136,16 @@ func DefaultElectionManagerOptions() ElectionManagerOptions {
 }
 
 func NewElectionManager(candidates []*Candidate, ballots []*Ballot, options ElectionManagerOptions) *ElectionManager {
-	rand.Seed(time.Now().Unix())
+	//nolint:gosec
+	rand1 := rand.New(rand.NewSource(time.Now().Unix()))
 
-	candidatesVoteCounts := make(map[*Candidate]*CandidateVoteCount)
+	candidateVoteCounts := make(map[*Candidate]*CandidateVoteCount)
 	for _, candidate := range candidates {
-		candidatesVoteCounts[candidate] = NewCandidateVoteCount(candidate)
+		candidateVoteCounts[candidate] = NewCandidateVoteCount(candidate)
 	}
 
 	candidatesInRace := make([]*CandidateVoteCount, 0)
-	for _, cvc := range candidatesVoteCounts {
+	for _, cvc := range candidateVoteCounts {
 		candidatesInRace = append(candidatesInRace, cvc)
 	}
 
@@ -157,7 +159,7 @@ func NewElectionManager(candidates []*Candidate, ballots []*Ballot, options Elec
 		if numberOfBlankVotes > 0 {
 			if options.PickRandomIfBlank {
 				for i := 0; i < numberOfBlankVotes; i++ {
-					newCandidateChoice := candidates[rand.Intn(len(candidates))]
+					newCandidateChoice := candidates[rand1.Intn(len(candidates))]
 					candidatesThatShouldBeVotedOn = append(candidatesThatShouldBeVotedOn, newCandidateChoice)
 				}
 			} else {
@@ -167,8 +169,8 @@ func NewElectionManager(candidates []*Candidate, ballots []*Ballot, options Elec
 		}
 
 		for _, candidate := range candidatesThatShouldBeVotedOn {
-			candidatesVoteCounts[candidate].NumberOfVotes += 1
-			candidatesVoteCounts[candidate].Votes = append(candidatesVoteCounts[candidate].Votes, ballot)
+			candidateVoteCounts[candidate].NumberOfVotes++
+			candidateVoteCounts[candidate].Votes = append(candidateVoteCounts[candidate].Votes, ballot)
 		}
 	}
 
@@ -177,7 +179,7 @@ func NewElectionManager(candidates []*Candidate, ballots []*Ballot, options Elec
 		Ballots:                ballots,
 		ElectionManagerOptions: options,
 
-		CandidateVoteCounts: candidatesVoteCounts,
+		CandidateVoteCounts: candidateVoteCounts,
 		CandidatesInRace:    candidatesInRace,
 		CandidatesElected:   make([]*CandidateVoteCount, 0),
 		CandidatesRejected:  make([]*CandidateVoteCount, 0),
@@ -202,9 +204,11 @@ func (em *ElectionManager) SortCandidatesInRace() {
 
 		if em.CompareMethodIfEqual == CompareMethodMostSecondChoice {
 			return em.Candidate1HasMostSecondChoices(em.CandidatesInRace[i], em.CandidatesInRace[j], 1)
-		} else { // Random method by default if not second choice
-			return rand.Intn(1) == 0
 		}
+		// Random method by default if not second choice
+		// requires to be input of 2 as it doesn't include upper bound
+		//nolint:gosec
+		return rand.Intn(2) == 0
 	})
 }
 
@@ -277,6 +281,7 @@ func (em *ElectionManager) TransferVotes(candidate *Candidate, numberOfTransferV
 		if newCandidateChoice == nil && em.PickRandomIfBlank {
 			candidatesInRace := em.GetCandidatesInRace()
 			if len(candidatesInRace) > 0 {
+				//nolint:gosec
 				newCandidateChoice = candidatesInRace[rand.Intn(len(candidatesInRace))]
 			}
 		}
@@ -356,7 +361,7 @@ func (em *ElectionManager) GetCandidateWithLeastVotesInRace() (*Candidate, error
 func (em *ElectionManager) GetCandidatesWithMoreThanXVotes(x int) []*Candidate {
 	candidates := make([]*Candidate, 0)
 	for _, cvc := range em.CandidatesInRace {
-		if math.Floor(cvc.NumberOfVotes*10_000)/10_000 > math.Floor(float64(x*10_000))/10_000 {
+		if math.Floor(cvc.NumberOfVotes*10_000)/10_000 > float64(x*10_000)/10_000 {
 			candidates = append(candidates, cvc.Candidate)
 		}
 	}
@@ -379,7 +384,9 @@ func (em *ElectionManager) GetResults() *RoundResult {
 
 func (em *ElectionManager) Candidate1HasMostSecondChoices(c1vc, c2vc *CandidateVoteCount, x int) bool {
 	if x >= em.NumberOfCandidates {
-		return rand.Intn(1) == 1
+		// requires to be input of 2 as it doesn't include upper bound
+		//nolint:gosec
+		return rand.Intn(2) == 1
 	}
 
 	votesCandidate1 := 0
@@ -388,20 +395,22 @@ func (em *ElectionManager) Candidate1HasMostSecondChoices(c1vc, c2vc *CandidateV
 	for _, ballot := range em.Ballots {
 		candidate := em.GetBallotCandidateNrXInRaceOrNone(ballot, x)
 
-		if candidate == c1vc.Candidate {
-			votesCandidate1 += 1
-		} else if candidate == c2vc.Candidate {
-			votesCandidate2 += 1
-		} else if candidate == nil {
+		switch candidate {
+		case c1vc.Candidate:
+			votesCandidate1++
+			break
+		case c2vc.Candidate:
+			votesCandidate2++
+			break
+		default:
 			continue
 		}
 	}
 
 	if votesCandidate1 == votesCandidate2 {
 		return em.Candidate1HasMostSecondChoices(c1vc, c2vc, x+1)
-	} else {
-		return votesCandidate1 > votesCandidate2
 	}
+	return votesCandidate1 > votesCandidate2
 }
 
 type ElectionResults struct {
