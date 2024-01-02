@@ -167,12 +167,11 @@ func main() {
 
 	controller := controllers.GetController(config.Server.DomainName)
 
-	router1 := routes.New(routes.NewRouter{
-		Config:  config,
-		Address: config.Server.Address,
-		Repos:   controllers.NewRepos(controller, mailer, newStore, mailConfig),
-		Debug:   config.Server.Debug,
-		Mailer:  mailer,
+	router1 := New(NewRouter{
+		Config: config,
+		Repos:  controllers.NewRepos(controller, mailer, newStore, mailConfig),
+		Debug:  config.Server.Debug,
+		Mailer: mailer,
 	})
 
 	err = router1.Start()

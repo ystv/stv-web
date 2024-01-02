@@ -1,20 +1,22 @@
-package routes
+package main
 
 import (
 	"embed"
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+	"net/mail"
+
 	"github.com/go-ldap/ldap/v3"
+	auth "github.com/korylprince/go-ad-auth/v3"
 	"github.com/labstack/echo/v4"
 	middleware2 "github.com/labstack/echo/v4/middleware"
-	"github.com/ystv/stv_web/auth"
+
 	"github.com/ystv/stv_web/controllers"
 	"github.com/ystv/stv_web/middleware"
 	"github.com/ystv/stv_web/structs"
 	"github.com/ystv/stv_web/utils"
-	"log"
-	"net/http"
-	"net/mail"
 )
 
 //go:embed public/*
@@ -22,18 +24,16 @@ var embeddedFiles embed.FS
 
 type (
 	Router struct {
-		config  structs.Config
-		address string
-		repos   *controllers.Repos
-		router  *echo.Echo
-		mailer  *utils.Mailer
+		config structs.Config
+		repos  *controllers.Repos
+		router *echo.Echo
+		mailer *utils.Mailer
 	}
 	NewRouter struct {
-		Config  structs.Config
-		Address string
-		Repos   *controllers.Repos
-		Debug   bool
-		Mailer  *utils.Mailer
+		Config structs.Config
+		Repos  *controllers.Repos
+		Debug  bool
+		Mailer *utils.Mailer
 	}
 )
 
@@ -146,7 +146,7 @@ func (r *Router) ldapServerAuth(username, password string, _ echo.Context) (bool
 		log.Println("bypass used")
 		return true, nil
 	}
-	config := auth.Config{
+	config := &auth.Config{
 		Server:   r.config.AD.Server,
 		Port:     r.config.AD.Port,
 		BaseDN:   r.config.AD.BaseDN,
@@ -195,21 +195,19 @@ func (r *Router) ldapServerAuth(username, password string, _ echo.Context) (bool
 			return false, echo.NewHTTPError(http.StatusUnauthorized, fmt.Errorf("BIND_SAM user not member of any groups"))
 		}
 
-		stv := false
+		stvGroup := false
 
 		for _, group := range dnGroups {
 			if group == "CN=STV Admin,CN=Users,DC=ystv,DC=local" {
-				stv = true
-				return true, nil
+				stvGroup = true
 			}
 		}
 
-		if !stv {
-			return false, echo.NewHTTPError(http.StatusUnauthorized, fmt.Errorf("STV not allowed for %s!\n", username))
+		if !stvGroup {
+			return false, echo.NewHTTPError(http.StatusUnauthorized, fmt.Errorf("STV not allowed for %s", username))
 		}
 		log.Printf("%s is authenticated", username)
 		return true, nil
-	} else {
-		return false, echo.NewHTTPError(http.StatusUnauthorized, fmt.Errorf("user not authenticated: %s!\n", username))
 	}
+	return false, echo.NewHTTPError(http.StatusUnauthorized, fmt.Errorf("user not authenticated: %s", username))
 }
