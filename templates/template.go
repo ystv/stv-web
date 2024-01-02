@@ -45,8 +45,7 @@ func (t *Templater) RenderTemplate(w io.Writer, data interface{}, mainTmpl Templ
 
 	t1 := template.New("_base.tmpl")
 	t1.Funcs(template.FuncMap{
-		"html":      renderHTML,
-		"stripHtml": StripHTML,
+		"html": renderHTML,
 		"formatDuration": func(d time.Duration) string {
 			days := int64(d.Hours()) / 24
 			hours := int64(d.Hours()) % 24
@@ -81,12 +80,8 @@ func (t *Templater) RenderTemplate(w io.Writer, data interface{}, mainTmpl Templ
 		"formatTime": func(fmt string, t time.Time) string {
 			return t.Format(fmt)
 		},
-		"now": func() time.Time {
-			return time.Now()
-		},
-		"thisYear": func() int {
-			return time.Now().Year()
-		},
+		"now":      time.Now(),
+		"thisYear": time.Now().Year(),
 		"add": func(a, b int) int {
 			return a + b
 		},
@@ -115,5 +110,6 @@ func (t *Templater) RenderEmail(emailTemplate Template) *template.Template {
 }
 
 func renderHTML(value interface{}) template.HTML {
-	return template.HTML(fmt.Sprint(value))
+	//nolint:gosec
+	return template.HTML(template.HTMLEscapeString(fmt.Sprint(value)))
 }
