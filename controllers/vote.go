@@ -2,11 +2,13 @@ package controllers
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/labstack/echo/v4"
+
 	"github.com/ystv/stv_web/storage"
 	"github.com/ystv/stv_web/store"
 	"github.com/ystv/stv_web/templates"
-	"strconv"
 )
 
 type VoteRepo struct {
@@ -63,7 +65,7 @@ func (r *VoteRepo) Vote(c echo.Context) error {
 		return fmt.Errorf("unable to vote on a non-open election")
 	}
 
-	c1, err := r.store.GetCandidatesElectionId(e1.Id)
+	c1, err := r.store.GetCandidatesElectionID(e1.Id)
 	if err != nil {
 		err = r.controller.Template.RenderTemplate(c.Response().Writer, struct{ Error string }{Error: "Candidates cannot be found"}, templates.VoteErrorTemplate)
 		if err != nil {
