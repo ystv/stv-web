@@ -22,7 +22,6 @@
         </div>
         <div class="card prevent-select">
             <div class="card-content">
-                {{with .PageData }}
                 <p>Welcome to the admin back pages.<br>
                     Use the navbar above to navigate to the other sections.</p>{{if or (or (or (ne .Elections.ToBeOpened 0) (ne .Elections.Open 0)) (or (ne .Elections.Closed 0) (ne .Elections.ErrInt 0))) (or (ne .Voters 0) (ne .Elections.Total 0))}}
             </div>
@@ -44,7 +43,7 @@
                         {{end}}
                     {{end}}
                     {{if ne .Voters 0}}Number of Voters: {{.Voters}}{{end}}
-                    {{end}}</p>{{end}}
+                    {{end}}</p>
             </div>
         </div>
         <br>

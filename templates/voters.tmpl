@@ -25,8 +25,8 @@
                 <p>Below is a list of voters, you can remove voters if they are no longer taking part, below the
                     table is where you can add more voters!</p>
                 <br>
-                {{if .PageData.Error}}
-                    An error occurred: {{.PageData.Error}}<br>
+                {{if .Error}}
+                    An error occurred: {{.Error}}<br>
                 {{end}}
                 <table class="table is-striped">
                     <thead>
@@ -37,7 +37,7 @@
                     </tr>
                     </thead>
                     <tbody>
-                    {{range .PageData.Voters}}
+                    {{range .Voters}}
                         <tr>
                             <td>{{.Name}}</td>
                             <td>{{.Email}}</td>
@@ -59,7 +59,7 @@
         <br>
         <div class="card prevent-select">
             <div class="card-content">
-                <p>The current status of the registration page is {{if .PageData.AllowRegistration}}enabled{{else}}disabled{{end}}!<br>
+                <p>The current status of the registration page is {{if .AllowRegistration}}enabled{{else}}disabled{{end}}!<br>
                 Press the button below to change this.</p><br>
                 <form id="registrationToggleForm" action="/admin/voters/registration" method="post">
                     <a class="button is-link" onclick="toggleRegistration()">Toggle Registration</a>

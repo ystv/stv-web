@@ -3,7 +3,6 @@ package templates
 import (
 	"embed"
 	"fmt"
-	"github.com/ystv/stv_web/structs"
 	"html/template"
 	"io"
 	"strings"
@@ -43,10 +42,6 @@ func (t Template) GetString() string {
 
 func (t *Templater) RenderTemplate(w io.Writer, data interface{}, mainTmpl Template) error {
 	var err error
-
-	td := structs.Globals{
-		PageData: data,
-	}
 
 	t1 := template.New("_base.tmpl")
 	t1.Funcs(template.FuncMap{
@@ -112,7 +107,7 @@ func (t *Templater) RenderTemplate(w io.Writer, data interface{}, mainTmpl Templ
 		return err
 	}
 
-	return t1.Execute(w, td)
+	return t1.Execute(w, data)
 }
 
 func (t *Templater) RenderEmail(emailTemplate Template) *template.Template {

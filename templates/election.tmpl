@@ -1,10 +1,10 @@
-{{define "title"}}YSTV Elections - Election ({{.PageData.Election.Name}}){{end}}
+{{define "title"}}YSTV Elections - Election ({{.Election.Name}}){{end}}
 {{define "content"}}
     <div class="container">
         <div class="card">
             <div class="card-content">
                 <a class="button is-link" href="/admin/elections">Return to list</a><br><br>
-                {{with .PageData.Election}}
+                {{with .Election}}
                 <p>You are viewing ({{.Name}})<br>
                 Name: {{.Name}}<br>
                 Description: {{.Description}}<br>
@@ -15,12 +15,12 @@
                     Edit Election:<br><a class="button is-warning" onclick="editElectionModal()">Edit election</a><br><br><br>
                     Remove Election:<br><a class="button is-danger" onclick="removeElectionModal()">Remove Election</a>
                 {{else if and .Open (not .Closed)}}
-                    Current ballots (click the button below to refresh): {{$.PageData.Ballots}}/{{.Voters}}<br>
+                    Current ballots (click the button below to refresh): {{$.Ballots}}/{{.Voters}}<br>
                     <a class="button" href="/admin/election/{{.Id}}">Refresh</a><br><br>
                     Current state: Open<br><br>
                     Next action to take: <a class="button is-danger" onclick="closeElectionModal()">Close election</a>
                 {{else if and (not .Open) .Closed}}
-                    Voting stats (ballots / voters): {{$.PageData.Ballots}}/{{.Voters}}<br><br>
+                    Voting stats (ballots / voters): {{$.Ballots}}/{{.Voters}}<br><br>
                     Current state: Closed<br><br>
                     {{with .Result}}
                         <strong>Winner: {{.Winner}}</strong><br><br>
@@ -57,7 +57,7 @@
                                                         <td>R.O.N.</td>
                                                     {{else}}
                                                         {{ $candidateId := .Id }}
-                                                        {{range $.PageData.Candidates}}
+                                                        {{range $.Candidates}}
                                                             {{if eq .Id $candidateId}}
                                                                 <td>{{.Name}}</td>
                                                             {{end}}
@@ -108,24 +108,24 @@
                     <thead>
                         <tr>
                             <th>Candidate</th>
-                            {{if and (and (not $.PageData.Election.Open) (not $.PageData.Election.Closed)) (ne (len .PageData.Candidates) 0)}}
+                            {{if and (and (not $.Election.Open) (not $.Election.Closed)) (ne (len .Candidates) 0)}}
                                 <th>Remove</th>
                             {{end}}
                         </tr>
                     </thead>
                     <tbody>
-                        {{range .PageData.Candidates}}
+                        {{range .Candidates}}
                             <tr>
                                 <td>{{.Name}}</td>
-                                {{if and (not $.PageData.Election.Open) (not $.PageData.Election.Closed)}}
+                                {{if and (not $.Election.Open) (not $.Election.Closed)}}
                                     <td><a class="button is-danger" onclick="removeCandidateModal({{.Id}}, {{.Name}})">Remove</a></td>
                                 {{end}}
                             </tr>
                         {{end}}
-                        {{if .PageData.Election.Ron}}
+                        {{if .Election.Ron}}
                             <tr>
                                 <td>R.O.N.</td>
-                                {{if and (not .PageData.Election.Open) (not .PageData.Election.Closed)}}
+                                {{if and (not .Election.Open) (not .Election.Closed)}}
                                     <td></td>
                                 {{end}}
                             </tr>
@@ -134,13 +134,13 @@
                     <tfoot>
                     <tr>
                         <th>Candidate</th>
-                        {{if and (and (not $.PageData.Election.Open) (not $.PageData.Election.Closed)) (ne (len .PageData.Candidates) 0)}}
+                        {{if and (and (not $.Election.Open) (not $.Election.Closed)) (ne (len .Candidates) 0)}}
                             <th>Remove</th>
                         {{end}}
                         </tr>
                     </tfoot>
                 </table>
-        {{with .PageData.Election}}
+        {{with .Election}}
             {{if and (not .Open) (not .Closed)}}
                 <br><br>
                     <p>Enter the name of the candidate.</p>
@@ -181,8 +181,8 @@
                         <tr>
                             <td>{{.Name}}</td>
                             <td>{{.Email}}</td>
-                            {{if and (not $.PageData.Election.Open) (not $.PageData.Election.Closed)}}
-                            <td><form id="includeForm" action="/admin/election/include/{{$.PageData.Election.Id}}/{{.Email}}" method="post">
+                            {{if and (not $.Election.Open) (not $.Election.Closed)}}
+                            <td><form id="includeForm" action="/admin/election/include/{{$.Election.Id}}/{{.Email}}" method="post">
                             <a class="button is-warning" onclick="includeVoter()">Include again</a></form></td>
                             {{end}}
                         </tr>
@@ -209,7 +209,7 @@
                             <div class="select">
                                 <select id="excludeDropDown" name="email" form="excludeForm">
                                     <option value="" disabled selected>Please select</option>
-                                    {{range $.PageData.VotersList}}
+                                    {{range $.VotersList}}
                                         <option value="{{.Email}}">{{.Name}} <{{.Email}}></option>
                                     {{end}}
                                 </select>
