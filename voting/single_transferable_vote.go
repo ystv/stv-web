@@ -100,26 +100,25 @@ func SingleTransferableVote(candidates []*Candidate, ballots []*Ballot, numberOf
 
 		if manager.GetNumberOfCandidatesInRace() == 0 {
 			break
-		} else {
-			for _, c := range candidatesToElect {
-				votesForCandidate, err := manager.GetNumberOfVotes(c)
-				if err != nil {
-					return nil, err
-				}
-				excessVotes := votesForCandidate - votesNeededToWin
-				if err := manager.TransferVotes(c, excessVotes); err != nil {
-					return nil, err
-				}
+		}
+		for _, c := range candidatesToElect {
+			votesForCandidate, err := manager.GetNumberOfVotes(c)
+			if err != nil {
+				return nil, err
 			}
+			excessVotes := votesForCandidate - votesNeededToWin
+			if err = manager.TransferVotes(c, excessVotes); err != nil {
+				return nil, err
+			}
+		}
 
-			for _, c := range candidatesToReject {
-				votesForCandidate, err := manager.GetNumberOfVotes(c)
-				if err != nil {
-					return nil, err
-				}
-				if err := manager.TransferVotes(c, votesForCandidate); err != nil {
-					return nil, err
-				}
+		for _, c := range candidatesToReject {
+			votesForCandidate, err := manager.GetNumberOfVotes(c)
+			if err != nil {
+				return nil, err
+			}
+			if err = manager.TransferVotes(c, votesForCandidate); err != nil {
+				return nil, err
 			}
 		}
 	}
