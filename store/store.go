@@ -113,15 +113,10 @@ func (store *Store) DeleteBallot(id uint64) error {
 		copy(s[index:], s[index+1:]) // Shift a[i+1:] left one index
 		s[len(s)-1] = nil            // Erase last element (write zero value)
 		stv.Ballots = s[:len(s)-1]   // Truncate slice
-	} else {
-		return fmt.Errorf("ballot not found for DeleteBallot")
-	}
 
-	if err = store.backend.Write(stv); err != nil {
-		return err
+		return store.backend.Write(stv)
 	}
-
-	return nil
+	return fmt.Errorf("ballot not found for DeleteBallot")
 }
 
 func (store *Store) GetCandidatesElectionID(id uint64) ([]*storage.Candidate, error) {
@@ -192,15 +187,10 @@ func (store *Store) DeleteCandidate(id string) error {
 		copy(s[index:], s[index+1:])  // Shift a[i+1:] left one index
 		s[len(s)-1] = nil             // Erase last element (write zero value)
 		stv.Candidates = s[:len(s)-1] // Truncate slice
-	} else {
-		return fmt.Errorf("candidate not found for DeleteCandidate")
-	}
 
-	if err = store.backend.Write(stv); err != nil {
-		return err
+		return store.backend.Write(stv)
 	}
-
-	return nil
+	return fmt.Errorf("candidate not found for DeleteCandidate")
 }
 
 func (store *Store) GetElections() ([]*storage.Election, error) {
@@ -287,10 +277,7 @@ func (store *Store) OpenElection(id uint64) error {
 				return fmt.Errorf("election closed for OpenElection")
 			}
 			e1.Open = true
-			if err = store.backend.Write(stv); err != nil {
-				return err
-			}
-			return nil
+			return store.backend.Write(stv)
 		}
 	}
 	return nil
@@ -309,10 +296,7 @@ func (store *Store) CloseElection(id uint64) error {
 			}
 			e1.Closed = true
 			e1.Open = false
-			if err = store.backend.Write(stv); err != nil {
-				return err
-			}
-			return nil
+			return store.backend.Write(stv)
 		}
 	}
 	return nil
@@ -333,7 +317,9 @@ func (store *Store) DeleteElection(id uint64) error {
 				return fmt.Errorf("cannot delete open election for DeleteElection")
 			}
 			found = true
-			ballots, err := store.GetBallotsElectionId(id)
+
+			var ballots []*storage.Ballot
+			ballots, err = store.GetBallotsElectionID(id)
 			if err != nil {
 				return err
 			}
@@ -343,7 +329,9 @@ func (store *Store) DeleteElection(id uint64) error {
 					return err
 				}
 			}
-			candidates, err := store.GetCandidatesElectionId(id)
+
+			var candidates []*storage.Candidate
+			candidates, err = store.GetCandidatesElectionID(id)
 			if err != nil {
 				return err
 			}
@@ -353,10 +341,13 @@ func (store *Store) DeleteElection(id uint64) error {
 					return err
 				}
 			}
-			urls, err := store.GetURLsElectionId(id)
+
+			var urls []*storage.URL
+			urls, err = store.GetURLsElectionID(id)
 			if err != nil {
 				return err
 			}
+
 			for _, u1 := range urls {
 				err = store.DeleteURL(u1.Url)
 				if err != nil {
@@ -373,11 +364,7 @@ func (store *Store) DeleteElection(id uint64) error {
 		stv.Elections = s[:len(s)-1] // Truncate slice
 	}
 
-	if err = store.backend.Write(stv); err != nil {
-		return err
-	}
-
-	return nil
+	return store.backend.Write(stv)
 }
 
 func (store *Store) DeleteAllElections() error {
@@ -391,11 +378,7 @@ func (store *Store) DeleteAllElections() error {
 	stv.Ballots = []*storage.Ballot{}
 	stv.Urls = []*storage.URL{}
 
-	if err = store.backend.Write(stv); err != nil {
-		return err
-	}
-
-	return nil
+	return store.backend.Write(stv)
 }
 
 func (store *Store) GetURLsElectionID(id uint64) ([]*storage.URL, error) {
@@ -460,10 +443,7 @@ func (store *Store) SetURLVoted(url string) error {
 				return fmt.Errorf("already set voted for SetVoted")
 			}
 			u1.Voted = true
-			if err := store.backend.Write(stv); err != nil {
-				return err
-			}
-			return nil
+			return store.backend.Write(stv)
 		}
 	}
 	return nil
@@ -489,15 +469,10 @@ func (store *Store) DeleteURL(url string) error {
 		copy(s[index:], s[index+1:]) // Shift a[i+1:] left one index
 		s[len(s)-1] = nil            // Erase last element (write zero value)
 		stv.Urls = s[:len(s)-1]      // Truncate slice
-	} else {
-		return fmt.Errorf("url not found for DeleteURL")
-	}
 
-	if err = store.backend.Write(stv); err != nil {
-		return err
+		return store.backend.Write(stv)
 	}
-
-	return nil
+	return fmt.Errorf("url not found for DeleteURL")
 }
 
 func (store *Store) GetAllowRegistration() (bool, error) {
@@ -586,15 +561,10 @@ func (store *Store) DeleteVoter(email string) error {
 		copy(s[index:], s[index+1:]) // Shift a[i+1:] left one index
 		s[len(s)-1] = nil            // Erase last element (write zero value)
 		stv.Voters = s[:len(s)-1]    // Truncate slice
-	} else {
-		return fmt.Errorf("voter not found for DeleteVoter")
-	}
 
-	if err = store.backend.Write(stv); err != nil {
-		return err
+		return store.backend.Write(stv)
 	}
-
-	return nil
+	return fmt.Errorf("voter not found for DeleteVoter")
 }
 
 func (store *Store) DeleteAllVoters() error {
@@ -605,11 +575,7 @@ func (store *Store) DeleteAllVoters() error {
 
 	stv.Voters = []*storage.Voter{}
 
-	if err = store.backend.Write(stv); err != nil {
-		return err
-	}
-
-	return nil
+	return store.backend.Write(stv)
 }
 
 func (store *Store) Get() (*storage.STV, error) {
