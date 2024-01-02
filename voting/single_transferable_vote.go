@@ -43,19 +43,21 @@ func SingleTransferableVote(candidates []*Candidate, ballots []*Ballot, numberOf
 		candidatesToElect := make([]*Candidate, 0)
 		candidatesToReject := make([]*Candidate, 0)
 
+	candidatesInRaceLoop:
 		for i, candidate := range candidatesInRace {
 			votesForCandidate := candidatesInRaceVotes[i]
 			isLastCandidate := i == (len(candidatesInRace) - 1)
 
-			if votesForCandidate-roundingError >= votesNeededToWin {
+			switch {
+			case votesForCandidate-roundingError >= votesNeededToWin:
 				candidatesToElect = append(candidatesToElect, candidate)
-			} else if i >= seatsLeft && (votesRemaining-roundingError) <= lastVotes {
+				break
+			case i >= seatsLeft && (votesRemaining-roundingError) <= lastVotes:
 				if len(candidatesToElect) > 0 {
-					break
-				} else {
-					candidatesToReject = append(candidatesToReject, candidate)
+					break candidatesInRaceLoop
 				}
-			} else if isLastCandidate {
+				candidatesToReject = append(candidatesToReject, candidate)
+			case isLastCandidate:
 				return nil, fmt.Errorf("election ended up in an illegal state")
 			}
 
