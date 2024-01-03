@@ -29,7 +29,7 @@ func (r *RegistrationRepo) Register(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
-	if !stv.AllowRegistration {
+	if !stv.GetAllowRegistration() {
 		return c.Redirect(http.StatusTemporaryRedirect, "/")
 	}
 
@@ -46,7 +46,7 @@ func (r *RegistrationRepo) QR(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
-	if !stv.AllowRegistration {
+	if !stv.GetAllowRegistration() {
 		return c.Redirect(http.StatusTemporaryRedirect, "/")
 	}
 
@@ -63,7 +63,7 @@ func (r *RegistrationRepo) AddVoter(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
-	if !stv.AllowRegistration {
+	if !stv.GetAllowRegistration() {
 		return c.Redirect(http.StatusTemporaryRedirect, "/")
 	}
 

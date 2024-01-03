@@ -31,8 +31,8 @@ func (store *Store) GetBallotsElectionID(id uint64) ([]*storage.Ballot, error) {
 		return nil, err
 	}
 	var ballots []*storage.Ballot
-	for _, ballot := range stv.Ballots {
-		if ballot.Election == id {
+	for _, ballot := range stv.GetBallots() {
+		if ballot.GetElection() == id {
 			ballots = append(ballots, ballot)
 		}
 	}
@@ -46,20 +46,20 @@ func (store *Store) AddBallot(ballot *storage.Ballot) (*storage.Ballot, error) {
 	}
 	var id uint64
 	id = 1
-	for _, e := range stv.Ballots {
-		id = maxNum(id, e.Id)
-		if e.Election == ballot.Election && e.Voter == ballot.Voter {
+	for _, e := range stv.GetBallots() {
+		id = maxNum(id, e.GetId())
+		if e.GetElection() == ballot.GetElection() && e.GetVoter() == ballot.GetVoter() {
 			return nil, fmt.Errorf("ballot already exists for AddBallot")
 		}
 	}
 
 	ballot.Id = id
 
-	for _, election := range stv.Elections {
-		if election.Id == ballot.Election {
-			for _, voter := range stv.Voters {
-				if voter.Email == ballot.Voter {
-					stv.Ballots = append(stv.Ballots, ballot)
+	for _, election := range stv.GetElections() {
+		if election.GetId() == ballot.GetElection() {
+			for _, voter := range stv.GetVoters() {
+				if voter.GetEmail() == ballot.GetVoter() {
+					stv.Ballots = append(stv.GetBallots(), ballot)
 
 					if err = store.backend.Write(stv); err != nil {
 						return nil, err
@@ -81,9 +81,9 @@ func (store *Store) EditBallot(ballot *storage.Ballot) (*storage.Ballot, error) 
 		return nil, err
 	}
 
-	for _, b := range stv.Ballots {
-		if b.Id == ballot.Id {
-			b.Choice = ballot.Choice
+	for _, b := range stv.GetBallots() {
+		if b.GetId() == ballot.GetId() {
+			b.Choice = ballot.GetChoice()
 			if err = store.backend.Write(stv); err != nil {
 				return nil, err
 			}
@@ -98,12 +98,12 @@ func (store *Store) DeleteBallot(id uint64) error {
 	if err != nil {
 		return err
 	}
-	s := stv.Ballots
+	s := stv.GetBallots()
 	found := false
 	var index int
 	var ballots *storage.Ballot
 	for index, ballots = range s {
-		if ballots.Id == id {
+		if ballots.GetId() == id {
 			found = true
 			break
 		}
@@ -125,8 +125,8 @@ func (store *Store) GetCandidatesElectionID(id uint64) ([]*storage.Candidate, er
 		return nil, err
 	}
 	var candidates []*storage.Candidate
-	for _, candidate := range stv.Candidates {
-		if candidate.Election == id {
+	for _, candidate := range stv.GetCandidates() {
+		if candidate.GetElection() == id {
 			candidates = append(candidates, candidate)
 		}
 	}
@@ -138,8 +138,8 @@ func (store *Store) FindCandidate(id string) (*storage.Candidate, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, c1 := range stv.Candidates {
-		if c1.Id == id {
+	for _, c1 := range stv.GetCandidates() {
+		if c1.GetId() == id {
 			return c1, nil
 		}
 	}
@@ -152,13 +152,13 @@ func (store *Store) AddCandidate(candidate *storage.Candidate) (*storage.Candida
 		return nil, err
 	}
 
-	for _, c := range stv.Candidates {
-		if c.Id == candidate.Id {
+	for _, c := range stv.GetCandidates() {
+		if c.GetId() == candidate.GetId() {
 			return nil, fmt.Errorf("unable to add candidate duplicate id for AddCandidate")
 		}
 	}
 
-	stv.Candidates = append(stv.Candidates, candidate)
+	stv.Candidates = append(stv.GetCandidates(), candidate)
 
 	if err = store.backend.Write(stv); err != nil {
 		return nil, err
@@ -172,12 +172,12 @@ func (store *Store) DeleteCandidate(id string) error {
 	if err != nil {
 		return err
 	}
-	s := stv.Candidates
+	s := stv.GetCandidates()
 	found := false
 	var index int
 	var candidate *storage.Candidate
 	for index, candidate = range s {
-		if candidate.Id == id {
+		if candidate.GetId() == id {
 			found = true
 			break
 		}
@@ -198,7 +198,7 @@ func (store *Store) GetElections() ([]*storage.Election, error) {
 	if err != nil {
 		return nil, err
 	}
-	return stv.Elections, err
+	return stv.GetElections(), err
 }
 
 func (store *Store) FindElection(id uint64) (*storage.Election, error) {
@@ -206,8 +206,8 @@ func (store *Store) FindElection(id uint64) (*storage.Election, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, e1 := range stv.Elections {
-		if e1.Id == id {
+	for _, e1 := range stv.GetElections() {
+		if e1.GetId() == id {
 			return e1, nil
 		}
 	}
@@ -221,15 +221,15 @@ func (store *Store) AddElection(election *storage.Election) (*storage.Election, 
 	}
 	var id uint64
 	id = 1
-	for _, e := range stv.Elections {
-		id = maxNum(id, e.Id)
+	for _, e := range stv.GetElections() {
+		id = maxNum(id, e.GetId())
 	}
 
 	election.Id = id + 1
 	election.Open = false
 	election.Closed = false
 
-	stv.Elections = append(stv.Elections, election)
+	stv.Elections = append(stv.GetElections(), election)
 
 	if err = store.backend.Write(stv); err != nil {
 		return nil, err
@@ -244,15 +244,15 @@ func (store *Store) EditElection(election *storage.Election) (*storage.Election,
 		return nil, err
 	}
 
-	for _, e := range stv.Elections {
-		if e.Id == election.Id {
-			e.Name = election.Name
-			e.Description = election.Description
-			e.Ron = election.Ron
-			e.Open = election.Open
-			e.Closed = election.Closed
-			e.Result = election.Result
-			e.Excluded = election.Excluded
+	for _, e := range stv.GetElections() {
+		if e.GetId() == election.GetId() {
+			e.Name = election.GetName()
+			e.Description = election.GetDescription()
+			e.Ron = election.GetRon()
+			e.Open = election.GetOpen()
+			e.Closed = election.GetClosed()
+			e.Result = election.GetResult()
+			e.Excluded = election.GetExcluded()
 			if err = store.backend.Write(stv); err != nil {
 				return nil, err
 			}
@@ -268,12 +268,12 @@ func (store *Store) OpenElection(id uint64) error {
 		return err
 	}
 
-	for _, e1 := range stv.Elections {
-		if e1.Id == id {
-			if e1.Open {
+	for _, e1 := range stv.GetElections() {
+		if e1.GetId() == id {
+			if e1.GetOpen() {
 				return fmt.Errorf("already set opened for OpenElection")
 			}
-			if e1.Closed {
+			if e1.GetClosed() {
 				return fmt.Errorf("election closed for OpenElection")
 			}
 			e1.Open = true
@@ -289,9 +289,9 @@ func (store *Store) CloseElection(id uint64) error {
 		return err
 	}
 
-	for _, e1 := range stv.Elections {
-		if e1.Id == id {
-			if e1.Closed {
+	for _, e1 := range stv.GetElections() {
+		if e1.GetId() == id {
+			if e1.GetClosed() {
 				return fmt.Errorf("already set closed for CloseElection")
 			}
 			e1.Closed = true
@@ -307,13 +307,13 @@ func (store *Store) DeleteElection(id uint64) error {
 	if err != nil {
 		return err
 	}
-	s := stv.Elections
+	s := stv.GetElections()
 	found := false
 	var index int
 	var election *storage.Election
 	for index, election = range s {
-		if election.Id == id {
-			if election.Open {
+		if election.GetId() == id {
+			if election.GetOpen() {
 				return fmt.Errorf("cannot delete open election for DeleteElection")
 			}
 			found = true
@@ -324,7 +324,7 @@ func (store *Store) DeleteElection(id uint64) error {
 				return err
 			}
 			for _, b1 := range ballots {
-				err = store.DeleteBallot(b1.Id)
+				err = store.DeleteBallot(b1.GetId())
 				if err != nil {
 					return err
 				}
@@ -336,7 +336,7 @@ func (store *Store) DeleteElection(id uint64) error {
 				return err
 			}
 			for _, c1 := range candidates {
-				err = store.DeleteCandidate(c1.Id)
+				err = store.DeleteCandidate(c1.GetId())
 				if err != nil {
 					return err
 				}
@@ -349,7 +349,7 @@ func (store *Store) DeleteElection(id uint64) error {
 			}
 
 			for _, u1 := range urls {
-				err = store.DeleteURL(u1.Url)
+				err = store.DeleteURL(u1.GetUrl())
 				if err != nil {
 					return err
 				}
@@ -387,8 +387,8 @@ func (store *Store) GetURLsElectionID(id uint64) ([]*storage.URL, error) {
 		return nil, err
 	}
 	var urls []*storage.URL
-	for _, url := range stv.Urls {
-		if url.Election == id {
+	for _, url := range stv.GetUrls() {
+		if url.GetElection() == id {
 			urls = append(urls, url)
 		}
 	}
@@ -400,8 +400,8 @@ func (store *Store) FindURL(url string) (*storage.URL, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, u1 := range stv.Urls {
-		if u1.Url == url {
+	for _, u1 := range stv.GetUrls() {
+		if u1.GetUrl() == url {
 			return u1, nil
 		}
 	}
@@ -414,15 +414,15 @@ func (store *Store) AddURL(url *storage.URL) (*storage.URL, error) {
 		return nil, err
 	}
 
-	for _, u := range stv.Urls {
-		if u.Url == url.Url {
+	for _, u := range stv.GetUrls() {
+		if u.GetUrl() == url.GetUrl() {
 			return nil, fmt.Errorf("unable to add url duplicate url for AddURL")
 		}
 	}
 
 	url.Voted = false
 
-	stv.Urls = append(stv.Urls, url)
+	stv.Urls = append(stv.GetUrls(), url)
 
 	if err = store.backend.Write(stv); err != nil {
 		return nil, err
@@ -437,9 +437,9 @@ func (store *Store) SetURLVoted(url string) error {
 		return err
 	}
 
-	for _, u1 := range stv.Urls {
-		if u1.Url == url {
-			if u1.Voted {
+	for _, u1 := range stv.GetUrls() {
+		if u1.GetUrl() == url {
+			if u1.GetVoted() {
 				return fmt.Errorf("already set voted for SetVoted")
 			}
 			u1.Voted = true
@@ -454,12 +454,12 @@ func (store *Store) DeleteURL(url string) error {
 	if err != nil {
 		return err
 	}
-	s := stv.Urls
+	s := stv.GetUrls()
 	found := false
 	var index int
 	var u *storage.URL
 	for index, u = range s {
-		if u.Url == url {
+		if u.GetUrl() == url {
 			found = true
 			break
 		}
@@ -480,7 +480,7 @@ func (store *Store) GetAllowRegistration() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return stv.AllowRegistration, err
+	return stv.GetAllowRegistration(), err
 }
 
 func (store *Store) SetAllowRegistration(allow bool) (bool, error) {
@@ -503,7 +503,7 @@ func (store *Store) GetVoters() ([]*storage.Voter, error) {
 	if err != nil {
 		return nil, err
 	}
-	return stv.Voters, err
+	return stv.GetVoters(), err
 }
 
 func (store *Store) FindVoter(email string) (*storage.Voter, error) {
@@ -511,8 +511,8 @@ func (store *Store) FindVoter(email string) (*storage.Voter, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, v1 := range stv.Voters {
-		if v1.Email == email {
+	for _, v1 := range stv.GetVoters() {
+		if v1.GetEmail() == email {
 			return v1, nil
 		}
 	}
@@ -525,13 +525,13 @@ func (store *Store) AddVoter(voter *storage.Voter) (*storage.Voter, error) {
 		return &storage.Voter{}, err
 	}
 
-	for _, v := range stv.Voters {
-		if v.Email == voter.Email {
+	for _, v := range stv.GetVoters() {
+		if v.GetEmail() == voter.GetEmail() {
 			return &storage.Voter{}, fmt.Errorf("unable to add voter duplicate email for AddVoter")
 		}
 	}
 
-	stv.Voters = append(stv.Voters, voter)
+	stv.Voters = append(stv.GetVoters(), voter)
 
 	if err = store.backend.Write(stv); err != nil {
 		return &storage.Voter{}, err
@@ -546,12 +546,12 @@ func (store *Store) DeleteVoter(email string) error {
 		return err
 	}
 
-	s := stv.Voters
+	s := stv.GetVoters()
 	found := false
 	var index int
 	var v *storage.Voter
 	for index, v = range s {
-		if v.Email == email {
+		if v.GetEmail() == email {
 			found = true
 			break
 		}

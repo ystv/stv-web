@@ -45,11 +45,11 @@ func (r *AdminRepo) Admin(c echo.Context) error {
 	errInt := 0
 	for _, e := range elections {
 		switch {
-		case !e.Open && !e.Closed:
+		case !e.GetOpen() && !e.GetClosed():
 			toBeOpened++
-		case e.Open && !e.Closed:
+		case e.GetOpen() && !e.GetClosed():
 			open++
-		case !e.Open && e.Closed:
+		case !e.GetOpen() && e.GetClosed():
 			closed++
 		default:
 			errInt++
@@ -118,10 +118,10 @@ func (r *AdminRepo) AddCandidate(c echo.Context) error {
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	if election.Open {
+	if election.GetOpen() {
 		return r.errorHandle(c, fmt.Errorf("cannot add candidate to open election"))
 	}
-	if election.Closed {
+	if election.GetClosed() {
 		return r.errorHandle(c, fmt.Errorf("cannot add candidate to closed election"))
 	}
 
@@ -131,7 +131,7 @@ func (r *AdminRepo) AddCandidate(c echo.Context) error {
 	}
 
 	for _, candidate := range candidates {
-		if candidate.Name == name {
+		if candidate.GetName() == name {
 			return r.errorHandle(c, fmt.Errorf("cannot have duplicate candidate"))
 		}
 	}
@@ -146,7 +146,7 @@ func (r *AdminRepo) AddCandidate(c echo.Context) error {
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	return r.election(c, election.Id)
+	return r.election(c, election.GetId())
 }
 
 func (r *AdminRepo) DeleteCandidate(c echo.Context) error {
@@ -162,18 +162,18 @@ func (r *AdminRepo) DeleteCandidate(c echo.Context) error {
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	election, err := r.store.FindElection(candidate.Election)
+	election, err := r.store.FindElection(candidate.GetElection())
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	if election.Open || election.Closed {
+	if election.GetOpen() || election.GetClosed() {
 		return r.errorHandle(c, fmt.Errorf("cannot delete candidate of open or closed election"))
 	}
 	err = r.store.DeleteCandidate(id)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	return r.election(c, election.Id)
+	return r.election(c, election.GetId())
 }
 
 func (r *AdminRepo) Elections(c echo.Context) error {
@@ -189,7 +189,7 @@ func (r *AdminRepo) Elections(c echo.Context) error {
 	if len(c.Request().FormValue("error")) > 0 {
 		err1 = c.Request().FormValue("error")
 	}
-	elections := stv.Elections
+	elections := stv.GetElections()
 	data := struct {
 		Elections []*storage.Election
 		Error     string
@@ -227,20 +227,21 @@ func (r *AdminRepo) Election(c echo.Context) error {
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	if election.Result != nil {
-		if len(election.Result.Winner) > 0 && election.Result.Winner != "R.O.N." {
+	if election.GetResult() != nil {
+		if len(election.GetResult().GetWinner()) > 0 && election.GetResult().GetWinner() != "R.O.N." {
 			var candidate *storage.Candidate
-			candidate, err = r.store.FindCandidate(election.Result.Winner)
+			candidate, err = r.store.FindCandidate(election.GetResult().GetWinner())
 			if err != nil {
 				fmt.Println(err)
-				candidate = &storage.Candidate{Name: election.Result.Winner}
+				candidate = &storage.Candidate{Name: election.GetResult().GetWinner()}
 			}
-			election.Result.Winner = candidate.Name
+			election.GetResult().Winner = candidate.GetName()
 		}
 	}
 	noOfBallots := 0
-	if election.Open || election.Closed {
-		ballots, err := r.store.GetBallotsElectionID(election.Id)
+	if election.GetOpen() || election.GetClosed() {
+		var ballots []*storage.Ballot
+		ballots, err = r.store.GetBallotsElectionID(election.GetId())
 		if err != nil {
 			return r.errorHandle(c, err)
 		}
@@ -283,20 +284,21 @@ func (r *AdminRepo) election(c echo.Context, id uint64) error {
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	if election.Result != nil {
-		if len(election.Result.Winner) > 0 && election.Result.Winner != "R.O.N." {
+	if election.GetResult() != nil {
+		if len(election.GetResult().GetWinner()) > 0 && election.GetResult().GetWinner() != "R.O.N." {
 			var candidate *storage.Candidate
-			candidate, err = r.store.FindCandidate(election.Result.Winner)
+			candidate, err = r.store.FindCandidate(election.GetResult().GetWinner())
 			if err != nil {
 				fmt.Println(err)
-				candidate = &storage.Candidate{Name: election.Result.Winner}
+				candidate = &storage.Candidate{Name: election.GetResult().GetWinner()}
 			}
-			election.Result.Winner = candidate.Name
+			election.GetResult().Winner = candidate.GetName()
 		}
 	}
 	noOfBallots := 0
-	if election.Open || election.Closed {
-		ballots, err := r.store.GetBallotsElectionID(election.Id)
+	if election.GetOpen() || election.GetClosed() {
+		var ballots []*storage.Ballot
+		ballots, err = r.store.GetBallotsElectionID(election.GetId())
 		if err != nil {
 			return r.errorHandle(c, err)
 		}
@@ -319,9 +321,9 @@ func (r *AdminRepo) election(c echo.Context, id uint64) error {
 		Election:   election,
 		Candidates: candidates,
 		Ballots:    noOfBallots,
-		Voters:     noOfVoters - len(election.Excluded),
+		Voters:     noOfVoters - len(election.GetExcluded()),
 		Error:      err1,
-		URL:        "https://" + r.controller.DomainName + "/admin/election/" + strconv.FormatUint(election.Id, 10),
+		URL:        "https://" + r.controller.DomainName + "/admin/election/" + strconv.FormatUint(election.GetId(), 10),
 		VotersList: voters,
 	}
 	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.ElectionTemplate)
@@ -397,7 +399,7 @@ func (r *AdminRepo) EditElection(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
-	return c.Redirect(http.StatusFound, fmt.Sprintf("admin/election/%d", election.Id))
+	return c.Redirect(http.StatusFound, fmt.Sprintf("admin/election/%d", election.GetId()))
 }
 
 func (r *AdminRepo) OpenElection(c echo.Context) error {
@@ -416,10 +418,10 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	if election.Open {
+	if election.GetOpen() {
 		return r.errorHandle(c, fmt.Errorf("cannot open election that is already open"))
 	}
-	if election.Closed {
+	if election.GetClosed() {
 		return r.errorHandle(c, fmt.Errorf("cannot reopen election that has been closed"))
 	}
 
@@ -449,18 +451,18 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 		log.Println("Reconnected to mail server")
 	}
 
-	election.Voters = uint64(len(voters) - len(election.Excluded))
+	election.Voters = uint64(len(voters) - len(election.GetExcluded()))
 
 	go r.sendEmailThread(voters, election)
 
-	return c.Redirect(http.StatusFound, fmt.Sprintf("admin/election/%d", election.Id))
+	return c.Redirect(http.StatusFound, fmt.Sprintf("admin/election/%d", election.GetId()))
 }
 
 func (r *AdminRepo) sendEmailThread(voters []*storage.Voter, election *storage.Election) {
 	for _, voter := range voters {
 		skip := false
-		for _, v := range election.Excluded {
-			if voter.Email == v.Email {
+		for _, v := range election.GetExcluded() {
+			if voter.GetEmail() == v.GetEmail() {
 				skip = true
 			}
 		}
@@ -468,8 +470,8 @@ func (r *AdminRepo) sendEmailThread(voters []*storage.Voter, election *storage.E
 		if !skip {
 			url := &storage.URL{
 				Url:      uuid.NewString(),
-				Election: election.Id,
-				Voter:    voter.Email,
+				Election: election.GetId(),
+				Voter:    voter.GetEmail(),
 				Voted:    false,
 			}
 
@@ -479,9 +481,9 @@ func (r *AdminRepo) sendEmailThread(voters []*storage.Voter, election *storage.E
 			}
 
 			file := utils.Mail{
-				Subject: "YSTV - Vote for (" + election.Name + ")",
+				Subject: "YSTV - Vote for (" + election.GetName() + ")",
 				Tpl:     r.controller.Template.RenderEmail(templates.EmailTemplate),
-				To:      voter.Email,
+				To:      voter.GetEmail(),
 				From:    "YSTV Elections <stv@ystv.co.uk>",
 				TplData: struct {
 					Election struct {
@@ -497,15 +499,15 @@ func (r *AdminRepo) sendEmailThread(voters []*storage.Voter, election *storage.E
 						Name        string
 						Description string
 					}{
-						Name:        election.Name,
-						Description: election.Description,
+						Name:        election.GetName(),
+						Description: election.GetDescription(),
 					},
 					Voter: struct {
 						Name string
 					}{
-						Name: voter.Name,
+						Name: voter.GetName(),
 					},
-					URL: "https://" + r.controller.DomainName + "/vote/" + url.Url,
+					URL: "https://" + r.controller.DomainName + "/vote/" + url.GetUrl(),
 				},
 			}
 
@@ -533,10 +535,10 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	if !election.Open {
+	if !election.GetOpen() {
 		return r.errorHandle(c, fmt.Errorf("cannot close election that is not open"))
 	}
-	if election.Closed {
+	if election.GetClosed() {
 		return r.errorHandle(c, fmt.Errorf("cannot reclose election that has been closed"))
 	}
 
@@ -548,7 +550,7 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 	ron := &voting.Candidate{Name: "R.O.N."}
 
 	candidates := make([]*voting.Candidate, 0)
-	if election.Ron {
+	if election.GetRon() {
 		candidates = append(candidates, ron)
 	}
 
@@ -558,14 +560,14 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 	}
 
 	for _, c1 := range candidatesStore {
-		candidates = append(candidates, &voting.Candidate{Name: c1.Id})
+		candidates = append(candidates, &voting.Candidate{Name: c1.GetId()})
 	}
 
 	ballotsVoting := make([]*voting.Ballot, 0, len(ballots))
 	for _, ballot := range ballots {
 		var c2 []*voting.Candidate
-		for i := uint64(0); i < uint64(len(ballot.Choice)); i++ {
-			choice := ballot.Choice[i]
+		for i := uint64(0); i < uint64(len(ballot.GetChoice())); i++ {
+			choice := ballot.GetChoice()[i]
 			for _, c3 := range candidates {
 				if c3.Name == choice {
 					c2 = append(c2, c3)
@@ -594,9 +596,9 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 			candidateStatus.Id = c.Candidate.Name
 			candidateStatus.NoOfVotes = c.NumberOfVotes
 			candidateStatus.Status = string(c.Status)
-			rounds.CandidateStatus = append(rounds.CandidateStatus, candidateStatus)
+			rounds.CandidateStatus = append(rounds.GetCandidateStatus(), candidateStatus)
 		}
-		result.Round = append(result.Round, rounds)
+		result.Round = append(result.GetRound(), rounds)
 	}
 	winners := electionResults.GetWinners()
 
@@ -618,7 +620,7 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
-	return c.Redirect(http.StatusFound, fmt.Sprintf("admin/election/%d", election.Id))
+	return c.Redirect(http.StatusFound, fmt.Sprintf("admin/election/%d", election.GetId()))
 }
 
 func (r *AdminRepo) Exclude(c echo.Context) error {
@@ -650,20 +652,20 @@ func (r *AdminRepo) Exclude(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
-	for _, v := range election.Excluded {
-		if v.Email == voter.Email {
-			return r.election(c, election.Id)
+	for _, v := range election.GetExcluded() {
+		if v.GetEmail() == voter.GetEmail() {
+			return r.election(c, election.GetId())
 		}
 	}
 
-	election.Excluded = append(election.Excluded, voter)
+	election.Excluded = append(election.GetExcluded(), voter)
 
 	_, err = r.store.EditElection(election)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
 
-	return r.election(c, election.Id)
+	return r.election(c, election.GetId())
 }
 
 func (r *AdminRepo) Include(c echo.Context) error {
@@ -695,11 +697,11 @@ func (r *AdminRepo) Include(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
-	for index, v := range election.Excluded {
-		if v.Email == voter.Email {
-			copy(election.Excluded[index:], election.Excluded[index+1:])     // Shift a[i+1:] left one index
-			election.Excluded[len(election.Excluded)-1] = nil                // Erase last element (write zero value)
-			election.Excluded = election.Excluded[:len(election.Excluded)-1] // Truncate slice
+	for index, v := range election.GetExcluded() {
+		if v.GetEmail() == voter.GetEmail() {
+			copy(election.GetExcluded()[index:], election.GetExcluded()[index+1:])     // Shift a[i+1:] left one index
+			election.Excluded[len(election.GetExcluded())-1] = nil                     // Erase last element (write zero value)
+			election.Excluded = election.GetExcluded()[:len(election.GetExcluded())-1] // Truncate slice
 
 			_, err = r.store.EditElection(election)
 			if err != nil {
@@ -709,7 +711,7 @@ func (r *AdminRepo) Include(c echo.Context) error {
 		}
 	}
 
-	return r.election(c, election.Id)
+	return r.election(c, election.GetId())
 }
 
 func (r *AdminRepo) DeleteElection(c echo.Context) error {
@@ -737,7 +739,7 @@ func (r *AdminRepo) Voters(c echo.Context) error {
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	voters := stv.Voters
+	voters := stv.GetVoters()
 	err = c.Request().ParseForm()
 	if err != nil {
 		return r.errorHandle(c, err)
@@ -752,7 +754,7 @@ func (r *AdminRepo) Voters(c echo.Context) error {
 		Error             string
 	}{
 		Voters:            voters,
-		AllowRegistration: stv.AllowRegistration,
+		AllowRegistration: stv.GetAllowRegistration(),
 		Error:             err1,
 	}
 	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.VotersTemplate)

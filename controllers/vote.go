@@ -41,7 +41,7 @@ func (r *VoteRepo) Vote(c echo.Context) error {
 		return err
 	}
 
-	e1, err := r.store.FindElection(u1.Election)
+	e1, err := r.store.FindElection(u1.GetElection())
 	if err != nil {
 		err = r.controller.Template.RenderTemplate(c.Response().Writer, struct{ Error string }{Error: "Invalid Election"}, templates.VoteErrorTemplate)
 		if err != nil {
@@ -50,14 +50,14 @@ func (r *VoteRepo) Vote(c echo.Context) error {
 		return err
 	}
 
-	if e1.Closed {
+	if e1.GetClosed() {
 		err = r.controller.Template.RenderTemplate(c.Response().Writer, struct{ Error string }{Error: "Election has been closed"}, templates.VoteErrorTemplate)
 		if err != nil {
 			return err
 		}
 		return fmt.Errorf("unable to vote on a closed election")
 	}
-	if !e1.Open {
+	if !e1.GetOpen() {
 		err = r.controller.Template.RenderTemplate(c.Response().Writer, struct{ Error string }{Error: "Election has not been opened"}, templates.VoteErrorTemplate)
 		if err != nil {
 			return err
@@ -65,7 +65,7 @@ func (r *VoteRepo) Vote(c echo.Context) error {
 		return fmt.Errorf("unable to vote on a non-open election")
 	}
 
-	c1, err := r.store.GetCandidatesElectionID(e1.Id)
+	c1, err := r.store.GetCandidatesElectionID(e1.GetId())
 	if err != nil {
 		err = r.controller.Template.RenderTemplate(c.Response().Writer, struct{ Error string }{Error: "Candidates cannot be found"}, templates.VoteErrorTemplate)
 		if err != nil {
@@ -74,7 +74,7 @@ func (r *VoteRepo) Vote(c echo.Context) error {
 		return fmt.Errorf("unable to get candidates")
 	}
 
-	v1, err := r.store.FindVoter(u1.Voter)
+	v1, err := r.store.FindVoter(u1.GetVoter())
 	if err != nil {
 		err = r.controller.Template.RenderTemplate(c.Response().Writer, struct{ Error string }{Error: "Voter cannot be found"}, templates.VoteErrorTemplate)
 		if err != nil {
@@ -83,7 +83,7 @@ func (r *VoteRepo) Vote(c echo.Context) error {
 		return fmt.Errorf("unable to get voter")
 	}
 
-	if u1.Voted {
+	if u1.GetVoted() {
 		err = r.controller.Template.RenderTemplate(c.Response().Writer, nil, templates.VotedTemplate)
 		if err != nil {
 			return err
@@ -100,7 +100,7 @@ func (r *VoteRepo) Vote(c echo.Context) error {
 		Election:   e1,
 		Candidates: c1,
 		Voter:      v1,
-		URL:        u1.Url,
+		URL:        u1.GetUrl(),
 	}
 	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.VoteTemplate)
 	if err != nil {
@@ -133,8 +133,8 @@ func (r *VoteRepo) AddVote(c echo.Context) error {
 	}
 
 	ballot := &storage.Ballot{
-		Election: u1.Election,
-		Voter:    u1.Voter,
+		Election: u1.GetElection(),
+		Voter:    u1.GetVoter(),
 		Choice:   m,
 	}
 
@@ -147,7 +147,7 @@ func (r *VoteRepo) AddVote(c echo.Context) error {
 		return err
 	}
 
-	err = r.store.SetURLVoted(u1.Url)
+	err = r.store.SetURLVoted(u1.GetUrl())
 	if err != nil {
 		return err
 	}
