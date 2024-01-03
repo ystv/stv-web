@@ -398,10 +398,8 @@ func (em *ElectionManager) Candidate1HasMostSecondChoices(c1vc, c2vc *CandidateV
 		switch candidate {
 		case c1vc.Candidate:
 			votesCandidate1++
-			break
 		case c2vc.Candidate:
 			votesCandidate2++
-			break
 		default:
 			continue
 		}

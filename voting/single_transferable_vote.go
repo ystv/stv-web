@@ -51,7 +51,6 @@ func SingleTransferableVote(candidates []*Candidate, ballots []*Ballot, numberOf
 			switch {
 			case votesForCandidate-roundingError >= votesNeededToWin:
 				candidatesToElect = append(candidatesToElect, candidate)
-				break
 			case i >= seatsLeft && (votesRemaining-roundingError) <= lastVotes:
 				if len(candidatesToElect) > 0 {
 					break candidatesInRaceLoop

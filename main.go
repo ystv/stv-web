@@ -52,19 +52,14 @@ func main() {
 		log.Fatal("unable to find env files, toml file or env variables")
 	case tomlUsed:
 		log.Println("using toml file")
-		break
 	case !global && !local:
 		log.Println("using env variables")
-		break
 	case local && global:
 		log.Println("using global and local env files")
-		break
 	case !local:
 		log.Println("using global env file")
-		break
 	default:
 		log.Println("using local env file")
-		break
 	}
 
 	if !tomlUsed {

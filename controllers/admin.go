@@ -47,16 +47,12 @@ func (r *AdminRepo) Admin(c echo.Context) error {
 		switch {
 		case !e.Open && !e.Closed:
 			toBeOpened++
-			break
 		case e.Open && !e.Closed:
 			open++
-			break
 		case !e.Open && e.Closed:
 			closed++
-			break
 		default:
 			errInt++
-			break
 		}
 	}
 	temp, err := r.store.GetVoters()
