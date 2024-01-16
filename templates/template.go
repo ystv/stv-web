@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	"io"
-	"strings"
 	"time"
 )
 
@@ -45,46 +44,7 @@ func (t *Templater) RenderTemplate(w io.Writer, data interface{}, mainTmpl Templ
 
 	t1 := template.New("_base.tmpl")
 	t1.Funcs(template.FuncMap{
-		"html": renderHTML,
-		"formatDuration": func(d time.Duration) string {
-			days := int64(d.Hours()) / 24
-			hours := int64(d.Hours()) % 24
-			minutes := int64(d.Minutes()) % 60
-			seconds := int64(d.Seconds()) % 60
-
-			segments := []struct {
-				name  string
-				value int64
-			}{
-				{"Day", days},
-				{"Hour", hours},
-				{"Min", minutes},
-				{"Sec", seconds},
-			}
-
-			var parts []string
-
-			for _, s := range segments {
-				if s.value == 0 {
-					continue
-				}
-				plural := ""
-				if s.value != 1 {
-					plural = "s"
-				}
-
-				parts = append(parts, fmt.Sprintf("%d %s%s", s.value, s.name, plural))
-			}
-			return strings.Join(parts, " ")
-		},
-		"formatTime": func(fmt string, t time.Time) string {
-			return t.Format(fmt)
-		},
-		"now":      time.Now(),
 		"thisYear": time.Now().Year(),
-		"add": func(a, b int) int {
-			return a + b
-		},
 		"inc": func(a int) int {
 			return a + 1
 		},
@@ -109,7 +69,26 @@ func (t *Templater) RenderEmail(emailTemplate Template) *template.Template {
 	return template.Must(template.New("email.tmpl").ParseFS(tmpls, emailTemplate.GetString()))
 }
 
-func renderHTML(value interface{}) template.HTML {
-	//nolint:gosec
-	return template.HTML(template.HTMLEscapeString(fmt.Sprint(value)))
-}
+// This section is for go template linter
+var (
+	AllTemplates = [][]string{
+		{"404NotFound.tmpl", "_base.tmpl", "_top.tmpl", "_footer.tmpl"},
+		{"admin.tmpl", "_base.tmpl", "_top.tmpl", "_footer.tmpl"},
+		{"adminError.tmpl", "_base.tmpl", "_top.tmpl", "_footer.tmpl"},
+		{"election.tmpl", "_base.tmpl", "_top.tmpl", "_footer.tmpl"},
+		{"elections.tmpl", "_base.tmpl", "_top.tmpl", "_footer.tmpl"},
+		{"email.tmpl", "_base.tmpl", "_top.tmpl", "_footer.tmpl"},
+		{"error.tmpl", "_base.tmpl", "_top.tmpl", "_footer.tmpl"},
+		{"home.tmpl", "_base.tmpl", "_top.tmpl", "_footer.tmpl"},
+		{"qr.tmpl", "_base.tmpl", "_top.tmpl", "_footer.tmpl"},
+		{"registered.tmpl", "_base.tmpl", "_top.tmpl", "_footer.tmpl"},
+		{"registration.tmpl", "_base.tmpl", "_top.tmpl", "_footer.tmpl"},
+		{"registrationError.tmpl", "_base.tmpl", "_top.tmpl", "_footer.tmpl"},
+		{"vote.tmpl", "_base.tmpl", "_top.tmpl", "_footer.tmpl"},
+		{"voted.tmpl", "_base.tmpl", "_top.tmpl", "_footer.tmpl"},
+		{"voteError.tmpl", "_base.tmpl", "_top.tmpl", "_footer.tmpl"},
+		{"voters.tmpl", "_base.tmpl", "_top.tmpl", "_footer.tmpl"},
+	}
+
+	_ = AllTemplates
+)
