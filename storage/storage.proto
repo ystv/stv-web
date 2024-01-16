@@ -12,20 +12,20 @@ message STV {
 }
 
 message Ballot {
-    uint64 id = 1;
-    uint64 election = 2;
+    string id = 1;
+    string election = 2;
     string voter = 3;
     map<uint64, string> choice = 4; // map[order, candidate id]
 }
 
 message Candidate {
     string id = 1;
-    uint64 election = 2;
+    string election = 2;
     string name = 3;
 }
 
 message Election {
-    uint64 id = 1;
+    string id = 1;
     string name = 2;
     string description = 3;
     bool ron = 4;
@@ -57,7 +57,7 @@ message CandidateStatus {
 
 message URL {
     string url = 1;
-    uint64 election = 2;
+    string election = 2;
     string voter = 3;
     bool voted = 4;
 }
