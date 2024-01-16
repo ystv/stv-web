@@ -399,7 +399,7 @@ func (r *AdminRepo) EditElection(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
-	return c.Redirect(http.StatusFound, fmt.Sprintf("admin/election/%d", election.GetId()))
+	return c.Redirect(http.StatusFound, fmt.Sprintf("/admin/election/%d", election.GetId()))
 }
 
 func (r *AdminRepo) OpenElection(c echo.Context) error {
@@ -455,7 +455,7 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 
 	go r.sendEmailThread(voters, election)
 
-	return c.Redirect(http.StatusFound, fmt.Sprintf("admin/election/%d", election.GetId()))
+	return c.Redirect(http.StatusFound, fmt.Sprintf("/admin/election/%d", election.GetId()))
 }
 
 func (r *AdminRepo) sendEmailThread(voters []*storage.Voter, election *storage.Election) {
@@ -620,7 +620,7 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
-	return c.Redirect(http.StatusFound, fmt.Sprintf("admin/election/%d", election.GetId()))
+	return c.Redirect(http.StatusFound, fmt.Sprintf("/admin/election/%d", election.GetId()))
 }
 
 func (r *AdminRepo) Exclude(c echo.Context) error {
