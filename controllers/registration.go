@@ -67,12 +67,8 @@ func (r *RegistrationRepo) AddVoter(c echo.Context) error {
 		return c.Redirect(http.StatusTemporaryRedirect, "/")
 	}
 
-	err = c.Request().ParseForm()
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
-	email := c.Request().FormValue("email")
-	name := c.Request().FormValue("name")
+	email := c.FormValue("email")
+	name := c.FormValue("name")
 	if len(name) == 0 || len(email) == 0 {
 		return r.errorHandle(c, fmt.Errorf("name and email need to be filled"))
 	}
