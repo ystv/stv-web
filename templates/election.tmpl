@@ -15,12 +15,13 @@
                     Edit Election:<br><a class="button is-warning" onclick="editElectionModal()">Edit election</a><br><br><br>
                     Remove Election:<br><a class="button is-danger" onclick="removeElectionModal()">Remove Election</a>
                 {{else if and .Open (not .Closed)}}
-                    Current ballots (click the button below to refresh): {{$.Ballots}}/{{.Voters}}<br>
+                    Click the button below to refresh ballots<br>
+                    Current ballots (ballots / voters): {{$.Ballots}}/{{.Voters}} ({{divPercent $.Ballots .Voters}})<br>
                     <a class="button" href="/admin/election/{{.Id}}">Refresh</a><br><br>
                     Current state: Open<br><br>
                     Next action to take: <a class="button is-danger" onclick="closeElectionModal()">Close election</a>
                 {{else if and (not .Open) .Closed}}
-                    Voting stats (ballots / voters): {{$.Ballots}}/{{.Voters}}<br><br>
+                    Voting stats (ballots / voters): {{$.Ballots}}/{{.Voters}} ({{divPercent $.Ballots .Voters}}%)<br><br>
                     Current state: Closed<br><br>
                     {{with .Result}}
                         <strong>Winner: {{.Winner}}</strong><br><br>

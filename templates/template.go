@@ -54,6 +54,9 @@ func (t *Templater) RenderTemplate(w io.Writer, data interface{}, mainTmpl Templ
 		"incUInt64": func(a uint64) uint64 {
 			return a + 1
 		},
+		"divPercent": func(a, b uint64) string {
+			return fmt.Sprintf("%03.2f%%", (float64(a)/float64(b))*float64(100))
+		},
 	})
 
 	t1, err = t1.ParseFS(tmpls, "_base.tmpl", "_top.tmpl", "_footer.tmpl", string(mainTmpl))
