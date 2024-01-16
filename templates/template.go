@@ -44,7 +44,7 @@ func (t *Templater) RenderTemplate(w io.Writer, data interface{}, mainTmpl Templ
 
 	t1 := template.New("_base.tmpl")
 	t1.Funcs(template.FuncMap{
-		"thisYear": time.Now().Year(),
+		"thisYear": func() int { return time.Now().Year() },
 		"inc": func(a int) int {
 			return a + 1
 		},
