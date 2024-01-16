@@ -2,6 +2,9 @@ package store
 
 import (
 	"fmt"
+	"log"
+
+	"github.com/google/uuid"
 
 	"github.com/ystv/stv_web/storage"
 )
@@ -18,14 +21,7 @@ func NewStore(root bool) (*Store, error) {
 	return &Store{backend: backend}, nil
 }
 
-func maxNum(a, b uint64) uint64 {
-	if a < b {
-		return b
-	}
-	return a
-}
-
-func (store *Store) GetBallotsElectionID(id uint64) ([]*storage.Ballot, error) {
+func (store *Store) GetBallotsElectionID(id string) ([]*storage.Ballot, error) {
 	stv, err := store.Get()
 	if err != nil {
 		return nil, err
@@ -44,16 +40,22 @@ func (store *Store) AddBallot(ballot *storage.Ballot) (*storage.Ballot, error) {
 	if err != nil {
 		return nil, err
 	}
-	var id uint64
-	id = 1
+
 	for _, e := range stv.GetBallots() {
-		id = maxNum(id, e.GetId())
 		if e.GetElection() == ballot.GetElection() && e.GetVoter() == ballot.GetVoter() {
 			return nil, fmt.Errorf("ballot already exists for AddBallot")
 		}
 	}
 
-	ballot.Id = id
+beforeUUID:
+	ballot.Id = uuid.NewString()
+
+	for _, b := range stv.GetBallots() {
+		if b.GetId() == ballot.GetId() {
+			log.Println("duplicate ballot id, retrying...")
+			goto beforeUUID
+		}
+	}
 
 	for _, election := range stv.GetElections() {
 		if election.GetId() == ballot.GetElection() {
@@ -93,7 +95,7 @@ func (store *Store) EditBallot(ballot *storage.Ballot) (*storage.Ballot, error) 
 	return nil, fmt.Errorf("unable to find ballot for EditBallot")
 }
 
-func (store *Store) DeleteBallot(id uint64) error {
+func (store *Store) DeleteBallot(id string) error {
 	stv, err := store.backend.Read()
 	if err != nil {
 		return err
@@ -119,7 +121,7 @@ func (store *Store) DeleteBallot(id uint64) error {
 	return fmt.Errorf("ballot not found for DeleteBallot")
 }
 
-func (store *Store) GetCandidatesElectionID(id uint64) ([]*storage.Candidate, error) {
+func (store *Store) GetCandidatesElectionID(id string) ([]*storage.Candidate, error) {
 	stv, err := store.Get()
 	if err != nil {
 		return nil, err
@@ -152,9 +154,13 @@ func (store *Store) AddCandidate(candidate *storage.Candidate) (*storage.Candida
 		return nil, err
 	}
 
+beforeUUID:
+	candidate.Id = uuid.NewString()
+
 	for _, c := range stv.GetCandidates() {
 		if c.GetId() == candidate.GetId() {
-			return nil, fmt.Errorf("unable to add candidate duplicate id for AddCandidate")
+			log.Println("duplicate candidate id, retrying...")
+			goto beforeUUID
 		}
 	}
 
@@ -201,7 +207,7 @@ func (store *Store) GetElections() ([]*storage.Election, error) {
 	return stv.GetElections(), err
 }
 
-func (store *Store) FindElection(id uint64) (*storage.Election, error) {
+func (store *Store) FindElection(id string) (*storage.Election, error) {
 	stv, err := store.Get()
 	if err != nil {
 		return nil, err
@@ -219,13 +225,17 @@ func (store *Store) AddElection(election *storage.Election) (*storage.Election, 
 	if err != nil {
 		return nil, err
 	}
-	var id uint64
-	id = 1
-	for _, e := range stv.GetElections() {
-		id = maxNum(id, e.GetId())
+
+beforeUUID:
+	election.Id = uuid.NewString()
+
+	for _, e := range stv.GetBallots() {
+		if e.GetId() == election.GetId() {
+			log.Println("duplicate election id, retrying...")
+			goto beforeUUID
+		}
 	}
 
-	election.Id = id + 1
 	election.Open = false
 	election.Closed = false
 
@@ -262,7 +272,7 @@ func (store *Store) EditElection(election *storage.Election) (*storage.Election,
 	return nil, fmt.Errorf("election not found for EditElection")
 }
 
-func (store *Store) OpenElection(id uint64) error {
+func (store *Store) OpenElection(id string) error {
 	stv, err := store.backend.Read()
 	if err != nil {
 		return err
@@ -283,7 +293,7 @@ func (store *Store) OpenElection(id uint64) error {
 	return nil
 }
 
-func (store *Store) CloseElection(id uint64) error {
+func (store *Store) CloseElection(id string) error {
 	stv, err := store.backend.Read()
 	if err != nil {
 		return err
@@ -302,7 +312,7 @@ func (store *Store) CloseElection(id uint64) error {
 	return nil
 }
 
-func (store *Store) DeleteElection(id uint64) error {
+func (store *Store) DeleteElection(id string) error {
 	stv, err := store.backend.Read()
 	if err != nil {
 		return err
@@ -381,7 +391,7 @@ func (store *Store) DeleteAllElections() error {
 	return store.backend.Write(stv)
 }
 
-func (store *Store) GetURLsElectionID(id uint64) ([]*storage.URL, error) {
+func (store *Store) GetURLsElectionID(id string) ([]*storage.URL, error) {
 	stv, err := store.Get()
 	if err != nil {
 		return nil, err
@@ -412,6 +422,16 @@ func (store *Store) AddURL(url *storage.URL) (*storage.URL, error) {
 	stv, err := store.Get()
 	if err != nil {
 		return nil, err
+	}
+
+beforeUUID:
+	url.Url = uuid.NewString()
+
+	for _, u := range stv.GetUrls() {
+		if u.GetUrl() == url.GetUrl() {
+			log.Println("duplicate url, retrying...")
+			goto beforeUUID
+		}
 	}
 
 	for _, u := range stv.GetUrls() {

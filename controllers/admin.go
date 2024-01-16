@@ -4,10 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
-	"unicode"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
 	"github.com/ystv/stv_web/storage"
@@ -93,22 +90,12 @@ func (r *AdminRepo) Admin(c echo.Context) error {
 }
 
 func (r *AdminRepo) AddCandidate(c echo.Context) error {
-	err := c.Request().ParseForm()
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
-	temp := c.Param("id")
-	for _, r2 := range temp {
-		if !unicode.IsNumber(r2) {
-			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
-		}
-	}
-	id, err := strconv.ParseUint(temp, 10, 64)
-	if err != nil {
-		return r.errorHandle(c, err)
+	id := c.Param("id")
+	if len(id) == 0 {
+		return r.errorHandle(c, fmt.Errorf("invalid election id"))
 	}
 
-	name := c.Request().FormValue("name")
+	name := c.FormValue("name")
 
 	if len(name) == 0 {
 		return r.errorHandle(c, fmt.Errorf("name cannot be empty"))
@@ -137,7 +124,6 @@ func (r *AdminRepo) AddCandidate(c echo.Context) error {
 	}
 
 	candidate := &storage.Candidate{
-		Id:       uuid.NewString(),
 		Election: id,
 		Name:     name,
 	}
@@ -146,17 +132,13 @@ func (r *AdminRepo) AddCandidate(c echo.Context) error {
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	return r.election(c, election.GetId())
+	return c.Redirect(http.StatusFound, fmt.Sprintf("/admin/election/%s", election.GetId()))
 }
 
 func (r *AdminRepo) DeleteCandidate(c echo.Context) error {
-	err := c.Request().ParseForm()
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
 	id := c.Param("id")
 	if len(id) == 0 {
-		return r.errorHandle(c, fmt.Errorf("cannot delete invalid id"))
+		return r.errorHandle(c, fmt.Errorf("invalid candidate id"))
 	}
 	candidate, err := r.store.FindCandidate(id)
 	if err != nil {
@@ -173,7 +155,7 @@ func (r *AdminRepo) DeleteCandidate(c echo.Context) error {
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	return r.election(c, election.GetId())
+	return c.Redirect(http.StatusFound, fmt.Sprintf("/admin/election/%s", election.GetId()))
 }
 
 func (r *AdminRepo) Elections(c echo.Context) error {
@@ -182,12 +164,9 @@ func (r *AdminRepo) Elections(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 	var err1 string
-	err = c.Request().ParseForm()
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
-	if len(c.Request().FormValue("error")) > 0 {
-		err1 = c.Request().FormValue("error")
+
+	if len(c.FormValue("error")) > 0 {
+		err1 = c.FormValue("error")
 	}
 	elections := stv.GetElections()
 	data := struct {
@@ -205,23 +184,17 @@ func (r *AdminRepo) Elections(c echo.Context) error {
 }
 
 func (r *AdminRepo) Election(c echo.Context) error {
-	temp := c.Param("id")
-	for _, r2 := range temp {
-		if !unicode.IsNumber(r2) {
-			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
-		}
-	}
-	id, err := strconv.ParseUint(temp, 10, 64)
-	if err != nil {
-		return r.errorHandle(c, err)
+	id := c.Param("id")
+	if len(id) == 0 {
+		return r.errorHandle(c, fmt.Errorf("invalid election id"))
 	}
 	election, err := r.store.FindElection(id)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
 	var err1 string
-	if len(c.Request().FormValue("error")) > 0 {
-		err1 = c.Request().FormValue("error")
+	if len(c.FormValue("error")) > 0 {
+		err1 = c.FormValue("error")
 	}
 	candidates, err := r.store.GetCandidatesElectionID(id)
 	if err != nil {
@@ -238,14 +211,14 @@ func (r *AdminRepo) Election(c echo.Context) error {
 			election.GetResult().Winner = candidate.GetName()
 		}
 	}
-	noOfBallots := 0
+	var noOfBallots uint64
 	if election.GetOpen() || election.GetClosed() {
 		var ballots []*storage.Ballot
 		ballots, err = r.store.GetBallotsElectionID(election.GetId())
 		if err != nil {
 			return r.errorHandle(c, err)
 		}
-		noOfBallots = len(ballots)
+		noOfBallots = uint64(len(ballots))
 	}
 	voters, err := r.store.GetVoters()
 	if err != nil {
@@ -254,7 +227,7 @@ func (r *AdminRepo) Election(c echo.Context) error {
 	data := struct {
 		Election   *storage.Election
 		Candidates []*storage.Candidate
-		Ballots    int
+		Ballots    uint64
 		Error      string
 		VotersList []*storage.Voter
 	}{
@@ -262,68 +235,6 @@ func (r *AdminRepo) Election(c echo.Context) error {
 		Candidates: candidates,
 		Ballots:    noOfBallots,
 		Error:      err1,
-		VotersList: voters,
-	}
-	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.ElectionTemplate)
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
-	return nil
-}
-
-func (r *AdminRepo) election(c echo.Context, id uint64) error {
-	election, err := r.store.FindElection(id)
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
-	var err1 string
-	if len(c.Request().FormValue("error")) > 0 {
-		err1 = c.Request().FormValue("error")
-	}
-	candidates, err := r.store.GetCandidatesElectionID(id)
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
-	if election.GetResult() != nil {
-		if len(election.GetResult().GetWinner()) > 0 && election.GetResult().GetWinner() != "R.O.N." {
-			var candidate *storage.Candidate
-			candidate, err = r.store.FindCandidate(election.GetResult().GetWinner())
-			if err != nil {
-				fmt.Println(err)
-				candidate = &storage.Candidate{Name: election.GetResult().GetWinner()}
-			}
-			election.GetResult().Winner = candidate.GetName()
-		}
-	}
-	noOfBallots := 0
-	if election.GetOpen() || election.GetClosed() {
-		var ballots []*storage.Ballot
-		ballots, err = r.store.GetBallotsElectionID(election.GetId())
-		if err != nil {
-			return r.errorHandle(c, err)
-		}
-		noOfBallots = len(ballots)
-	}
-	voters, err := r.store.GetVoters()
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
-	noOfVoters := len(voters)
-	data := struct {
-		Election   *storage.Election
-		Candidates []*storage.Candidate
-		Ballots    int
-		Voters     int
-		Error      string
-		URL        string
-		VotersList []*storage.Voter
-	}{
-		Election:   election,
-		Candidates: candidates,
-		Ballots:    noOfBallots,
-		Voters:     noOfVoters - len(election.GetExcluded()),
-		Error:      err1,
-		URL:        "https://" + r.controller.DomainName + "/admin/election/" + strconv.FormatUint(election.GetId(), 10),
 		VotersList: voters,
 	}
 	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.ElectionTemplate)
@@ -334,13 +245,9 @@ func (r *AdminRepo) election(c echo.Context, id uint64) error {
 }
 
 func (r *AdminRepo) AddElection(c echo.Context) error {
-	err := c.Request().ParseForm()
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
-	name := c.Request().FormValue("name")
-	description := c.Request().FormValue("description")
-	tempRon := c.Request().FormValue("ron")
+	name := c.FormValue("name")
+	description := c.FormValue("description")
+	tempRon := c.FormValue("ron")
 	ron := false
 	if len(tempRon) > 0 {
 		ron = true
@@ -362,24 +269,14 @@ func (r *AdminRepo) AddElection(c echo.Context) error {
 }
 
 func (r *AdminRepo) EditElection(c echo.Context) error {
-	err := c.Request().ParseForm()
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
-	temp := c.Param("id")
-	for _, r2 := range temp {
-		if !unicode.IsNumber(r2) {
-			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
-		}
-	}
-	id, err := strconv.ParseUint(temp, 10, 64)
-	if err != nil {
-		return r.errorHandle(c, err)
+	id := c.Param("id")
+	if len(id) == 0 {
+		return r.errorHandle(c, fmt.Errorf("invalid election id"))
 	}
 
-	name := c.Request().FormValue("name1")
-	description := c.Request().FormValue("description")
-	tempRon := c.Request().FormValue("ron")
+	name := c.FormValue("name1")
+	description := c.FormValue("description")
+	tempRon := c.FormValue("ron")
 	ron := false
 	if len(tempRon) > 0 {
 		ron = true
@@ -399,19 +296,13 @@ func (r *AdminRepo) EditElection(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
-	return c.Redirect(http.StatusFound, fmt.Sprintf("/admin/election/%d", election.GetId()))
+	return c.Redirect(http.StatusFound, fmt.Sprintf("/admin/election/%s", election.GetId()))
 }
 
 func (r *AdminRepo) OpenElection(c echo.Context) error {
-	temp := c.Param("id")
-	for _, r2 := range temp {
-		if !unicode.IsNumber(r2) {
-			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
-		}
-	}
-	id, err := strconv.ParseUint(temp, 10, 64)
-	if err != nil {
-		return r.errorHandle(c, err)
+	id := c.Param("id")
+	if len(id) == 0 {
+		return r.errorHandle(c, fmt.Errorf("invalid election id"))
 	}
 
 	election, err := r.store.FindElection(id)
@@ -455,7 +346,7 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 
 	go r.sendEmailThread(voters, election)
 
-	return c.Redirect(http.StatusFound, fmt.Sprintf("/admin/election/%d", election.GetId()))
+	return c.Redirect(http.StatusFound, fmt.Sprintf("/admin/election/%s", election.GetId()))
 }
 
 func (r *AdminRepo) sendEmailThread(voters []*storage.Voter, election *storage.Election) {
@@ -469,13 +360,12 @@ func (r *AdminRepo) sendEmailThread(voters []*storage.Voter, election *storage.E
 
 		if !skip {
 			url := &storage.URL{
-				Url:      uuid.NewString(),
 				Election: election.GetId(),
 				Voter:    voter.GetEmail(),
 				Voted:    false,
 			}
 
-			_, err := r.store.AddURL(url)
+			url, err := r.store.AddURL(url)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -520,15 +410,9 @@ func (r *AdminRepo) sendEmailThread(voters []*storage.Voter, election *storage.E
 }
 
 func (r *AdminRepo) CloseElection(c echo.Context) error {
-	temp := c.Param("id")
-	for _, r2 := range temp {
-		if !unicode.IsNumber(r2) {
-			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
-		}
-	}
-	id, err := strconv.ParseUint(temp, 10, 64)
-	if err != nil {
-		return r.errorHandle(c, err)
+	id := c.Param("id")
+	if len(id) == 0 {
+		return r.errorHandle(c, fmt.Errorf("invalid election id"))
 	}
 
 	election, err := r.store.FindElection(id)
@@ -620,19 +504,13 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
-	return c.Redirect(http.StatusFound, fmt.Sprintf("/admin/election/%d", election.GetId()))
+	return c.Redirect(http.StatusFound, fmt.Sprintf("/admin/election/%s", election.GetId()))
 }
 
 func (r *AdminRepo) Exclude(c echo.Context) error {
-	temp := c.Param("id")
-	for _, r2 := range temp {
-		if !unicode.IsNumber(r2) {
-			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
-		}
-	}
-	id, err := strconv.ParseUint(temp, 10, 64)
-	if err != nil {
-		return r.errorHandle(c, err)
+	id := c.Param("id")
+	if len(id) == 0 {
+		return r.errorHandle(c, fmt.Errorf("invalid election id"))
 	}
 
 	election, err := r.store.FindElection(id)
@@ -640,12 +518,7 @@ func (r *AdminRepo) Exclude(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
-	err = c.Request().ParseForm()
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
-
-	email := c.Request().FormValue("email")
+	email := c.FormValue("email")
 
 	voter, err := r.store.FindVoter(email)
 	if err != nil {
@@ -654,7 +527,7 @@ func (r *AdminRepo) Exclude(c echo.Context) error {
 
 	for _, v := range election.GetExcluded() {
 		if v.GetEmail() == voter.GetEmail() {
-			return r.election(c, election.GetId())
+			return c.Redirect(http.StatusFound, fmt.Sprintf("/admin/election/%s", election.GetId()))
 		}
 	}
 
@@ -665,27 +538,16 @@ func (r *AdminRepo) Exclude(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
-	return r.election(c, election.GetId())
+	return c.Redirect(http.StatusFound, fmt.Sprintf("/admin/election/%s", election.GetId()))
 }
 
 func (r *AdminRepo) Include(c echo.Context) error {
-	temp := c.Param("id")
-	for _, r2 := range temp {
-		if !unicode.IsNumber(r2) {
-			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
-		}
-	}
-	id, err := strconv.ParseUint(temp, 10, 64)
-	if err != nil {
-		return r.errorHandle(c, err)
+	id := c.Param("id")
+	if len(id) == 0 {
+		return r.errorHandle(c, fmt.Errorf("invalid election id"))
 	}
 
 	election, err := r.store.FindElection(id)
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
-
-	err = c.Request().ParseForm()
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -711,27 +573,21 @@ func (r *AdminRepo) Include(c echo.Context) error {
 		}
 	}
 
-	return r.election(c, election.GetId())
+	return c.Redirect(http.StatusFound, fmt.Sprintf("/admin/election/%s", election.GetId()))
 }
 
 func (r *AdminRepo) DeleteElection(c echo.Context) error {
-	temp := c.Param("id")
-	for _, r2 := range temp {
-		if !unicode.IsNumber(r2) {
-			return r.errorHandle(c, fmt.Errorf("id expects a positive number, the provided is not a positive number"))
-		}
+	id := c.Param("id")
+	if len(id) == 0 {
+		return r.errorHandle(c, fmt.Errorf("invalid election id"))
 	}
-	id, err := strconv.ParseUint(temp, 10, 64)
+
+	err := r.store.DeleteElection(id)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
 
-	err = r.store.DeleteElection(id)
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
-
-	return r.Elections(c)
+	return c.Redirect(http.StatusFound, "/admin/elections")
 }
 
 func (r *AdminRepo) Voters(c echo.Context) error {
@@ -740,13 +596,10 @@ func (r *AdminRepo) Voters(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 	voters := stv.GetVoters()
-	err = c.Request().ParseForm()
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
+
 	var err1 string
-	if len(c.Request().FormValue("error")) > 0 {
-		err1 = c.Request().FormValue("error")
+	if len(c.FormValue("error")) > 0 {
+		err1 = c.FormValue("error")
 	}
 	data := struct {
 		Voters            []*storage.Voter
@@ -765,16 +618,12 @@ func (r *AdminRepo) Voters(c echo.Context) error {
 }
 
 func (r *AdminRepo) AddVoter(c echo.Context) error {
-	err := c.Request().ParseForm()
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
-	email := c.Request().FormValue("email")
-	name := c.Request().FormValue("name")
+	email := c.FormValue("email")
+	name := c.FormValue("name")
 	if len(name) == 0 || len(email) == 0 {
 		return r.errorHandle(c, fmt.Errorf("name and email need to be filled"))
 	}
-	_, err = r.store.AddVoter(&storage.Voter{
+	_, err := r.store.AddVoter(&storage.Voter{
 		Email: email,
 		Name:  name,
 	})
@@ -785,12 +634,8 @@ func (r *AdminRepo) AddVoter(c echo.Context) error {
 }
 
 func (r *AdminRepo) DeleteVoter(c echo.Context) error {
-	err := c.Request().ParseForm()
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
-	email := c.Request().FormValue("email")
-	err = r.store.DeleteVoter(email)
+	email := c.FormValue("email")
+	err := r.store.DeleteVoter(email)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
