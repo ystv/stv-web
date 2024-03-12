@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"log"
 	"time"
 )
 
@@ -61,7 +62,7 @@ func (t *Templater) RenderTemplate(w io.Writer, data interface{}, mainTmpl Templ
 
 	t1, err = t1.ParseFS(tmpls, "_base.tmpl", "_top.tmpl", "_footer.tmpl", string(mainTmpl))
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return err
 	}
 
