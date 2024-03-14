@@ -13,7 +13,9 @@ COPY go.sum ./
 COPY . ./
 RUN go mod download
 
-RUN apk update && apk add git make protoc && apk add protoc-gen-go --repository https://dl-cdn.alpinelinux.org/alpine/edge/testing/ --allow-untrusted
+RUN apk update
+RUN apk add git make protoc
+RUN apk add protoc-gen-go --repository https://dl-cdn.alpinelinux.org/alpine/edge/testing/ --allow-untrusted
 
 COPY *.go ./
 
