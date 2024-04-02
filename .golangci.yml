@@ -19,3 +19,4 @@ linters:
     - gci
     - gofumpt
     - protogetter
+    - perfsprint
