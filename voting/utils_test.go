@@ -68,8 +68,9 @@ func ParseBLT(tb testing.TB, file string) ([]*Candidate, []*Ballot, int) {
 		}
 		weightStr, ballotStr, ok := strings.Cut(line, " ")
 		require.Truef(tb, ok, "failed to parse ballot weight: %q", line)
-		weight, err := strconv.Atoi(weightStr)
-		require.NoErrorf(tb, err, "failed to parse ballot weight: %w", err)
+		var weight int
+		weight, err = strconv.Atoi(weightStr)
+		require.NoErrorf(tb, err, "failed to parse ballot weight: %+v", err)
 
 		votes := strings.Split(ballotStr, " ")
 		// we know the last element is 0, so we can just ignore it
@@ -77,8 +78,9 @@ func ParseBLT(tb testing.TB, file string) ([]*Candidate, []*Ballot, int) {
 			RankedCandidates: make([]*Candidate, 0, len(votes)-1),
 		}
 		for _, voteStr := range votes[:len(votes)-1] {
-			candidateIndex, err := strconv.Atoi(voteStr)
-			require.NoErrorf(tb, err, "failed to parse ballot: %w", err)
+			var candidateIndex int
+			candidateIndex, err = strconv.Atoi(voteStr)
+			require.NoErrorf(tb, err, "failed to parse ballot: %+v", err)
 			cdt := candidatesByIndex[candidateIndex]
 			require.NotNilf(tb, cdt, "malformed ballot %q: invalid candidate index %d", line, candidateIndex)
 			ballot.RankedCandidates = append(ballot.RankedCandidates, cdt)
