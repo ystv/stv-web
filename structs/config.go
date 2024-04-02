@@ -11,9 +11,10 @@ type (
 	}
 
 	Server struct {
-		Debug      bool   `toml:"debug"`
-		Address    string `toml:"address"`
-		DomainName string `toml:"domain_name"`
+		Debug                 bool   `toml:"debug"`
+		Address               string `toml:"address"`
+		DomainName            string `toml:"domain_name"`
+		ForceResetURLEndpoint string `toml:"force_reset_url_endpoint"`
 	}
 
 	AD struct {

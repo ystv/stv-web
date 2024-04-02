@@ -654,6 +654,26 @@ func (r *AdminRepo) SwitchRegistration(c echo.Context) error {
 	return r.Voters(c)
 }
 
+func (r *AdminRepo) ForceReset(c echo.Context) error {
+	var err error
+	err = r.store.DeleteAllElections()
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+
+	err = r.store.DeleteAllVoters()
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+
+	_, err = r.store.SetAllowRegistration(false)
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+
+	return c.JSON(http.StatusOK, "{\"message\": \"successfully reset stored data\"}")
+}
+
 func (r *AdminRepo) errorHandle(c echo.Context, err error) error {
 	data := struct {
 		Error string

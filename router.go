@@ -99,6 +99,7 @@ func (r *Router) loadRoutes() {
 			voters.POST("/delete", r.repos.Admin.DeleteVoter)
 			voters.POST("/registration", r.repos.Admin.SwitchRegistration)
 		}
+		admin.POST("/"+r.config.Server.ForceResetURLEndpoint, r.repos.Admin.ForceReset)
 	}
 
 	registration := r.router.Group("/registration")
