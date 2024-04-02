@@ -1,5 +1,5 @@
 # parameters
-GO_BUILD=CGO_ENABLED=0 go build
+GO_BUILD=go build
 GO_CLEAN=go clean
 PROTOC=protoc
 BINARY_NAME=stv-web
