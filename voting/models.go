@@ -43,7 +43,7 @@ func NewBallot(candidates []*Candidate) *Ballot {
 }
 
 func hasDuplicates(candidates []*Candidate) bool {
-	visited := make(map[string]bool, 0)
+	visited := make(map[string]bool)
 	for _, c := range candidates {
 		_, ok := visited[c.Name]
 		if ok {
