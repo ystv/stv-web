@@ -13,7 +13,7 @@ func New(e *echo.Echo, domainName string) {
 		AllowCredentials: true,
 		Skipper:          echoMw.DefaultSkipper,
 		AllowOrigins: []string{
-			//"http://" + domainName, // added for testing purposes, this is always meant to be behind a reverse proxy
+			// "http://" + domainName, // added for testing purposes, this is always meant to be behind a reverse proxy
 			"https://" + domainName,
 		},
 		AllowHeaders: []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderAccessControlAllowCredentials, echo.HeaderAccessControlAllowOrigin, echo.HeaderAuthorization},
