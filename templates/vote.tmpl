@@ -28,7 +28,9 @@
                             <tr{{if even (inc $i)}} class="even"{{end}} id="candidate_row_{{$i}}">
                                 <td>{{inc $i}}</td>
                                 <td id="candidate~{{$i}}">{{.Name}}
-                                    <input type="text" name="order~{{$i}}" value="{{.Id}}" style="display: none"/></td>
+                                    <label>
+                                        <input type="text" name="order~{{$i}}" value="{{.Id}}" style="display: none"/>
+                                    </label></td>
                                 <td>
                                     <a class="button up">up &uarr;</a>&nbsp;&nbsp;&nbsp;&nbsp;
                                     <a class="button down">down &darr;</a>
@@ -41,7 +43,9 @@
                             <tr{{if even (inc $i)}} class="even"{{end}} id="candidate_row_{{$i}}">
                                 <td>{{inc $i}}</td>
                                 <td id="candidate~{{$i}}">R.O.N.
-                                    <input type="text" name="order~{{$i}}" value="R.O.N." style="display: none"/></td>
+                                    <label>
+                                        <input type="text" name="order~{{$i}}" value="R.O.N." style="display: none"/>
+                                    </label></td>
                                 <td>
                                     <a class="button up">up &uarr;</a>&nbsp;&nbsp;
                                     <a class="button down">down &darr;</a>&nbsp;&nbsp;
@@ -180,9 +184,11 @@
                 });
             });
 
+            const voteTable = $("#voteTable");
+
             function sortRowsVote() {
                 $("#voteTable").find("tr").each(function (index) {
-                    $("#voteTable").find("tr").removeClass("even odd");
+                    voteTable.find("tr").removeClass("even odd");
                     if (index > 0) {
                         $(this).find("td").eq(0).html(index);
                         $(this).find("td").eq(1).attr("id", "candidate~" + index)
@@ -199,7 +205,7 @@
 
             function sortRowsRemoved() {
                 $("#removedTable").find("tr").each(function (index) {
-                    $("#removedTable").find("tr").removeClass("even odd");
+                    voteTable.find("tr").removeClass("even odd");
                     if (index > 0) {
                         $(this).find("td").eq(0).attr("id", "candidate_removed~" + index)
                         $(this).attr("id", "candidate_removed_row_" + index);

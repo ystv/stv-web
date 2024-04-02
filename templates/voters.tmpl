@@ -75,13 +75,13 @@
                 <br>
                 <form id="addVoter" action="/admin/voters" method="post" style="max-width: 500px">
                     <div class="field">
-                        <label class="label">Name</label>
+                        <label class="label" for="name">Name</label>
                         <div class="control">
                             <input class="input" type="text" id="name" name="name" placeholder="Enter name" value="">
                         </div>
                     </div>
                     <div class="field">
-                        <label class="label">Email</label>
+                        <label class="label" for="email">Email</label>
                         <div class="control">
                             <input class="input" type="email" placeholder="Enter email" id="email" name="email"
                                    onkeyup="ValidateEmail()" value="">
@@ -149,19 +149,20 @@
 
             function ValidateEmail() {
                 const validRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/;
-                if ($("#email").val().match(validRegex)) {
-                    $("#emailAlert").removeClass("is-danger");
-                    $("#emailAlert").addClass("is-success");
-                    $("#email").removeClass("is-danger");
-                    $("#email").addClass("is-success");
-                    $("#emailAlert").innerText = "This email is valid";
+                const email = $("#email"), emailAlert = $("#emailAlert");
+                if (email.val().match(validRegex)) {
+                    emailAlert.removeClass("is-danger");
+                    emailAlert.addClass("is-success");
+                    email.removeClass("is-danger");
+                    email.addClass("is-success");
+                    emailAlert.innerText = "This email is valid";
                     valid = true;
                 } else {
-                    $("#emailAlert").removeClass("is-success");
-                    $("#emailAlert").addClass("is-danger");
-                    $("#email").removeClass("is-success");
-                    $("#email").addClass("is-danger");
-                    $("#emailAlert").innerText = "This email is invalid";
+                    emailAlert.removeClass("is-success");
+                    emailAlert.addClass("is-danger");
+                    email.removeClass("is-success");
+                    email.addClass("is-danger");
+                    emailAlert.innerText = "This email is invalid";
                     valid = false;
                 }
             }
