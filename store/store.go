@@ -41,12 +41,6 @@ func (store *Store) AddBallot(ballot *storage.Ballot) (*storage.Ballot, error) {
 		return nil, err
 	}
 
-	for _, e := range stv.GetBallots() {
-		if e.GetElection() == ballot.GetElection() && e.GetVoter() == ballot.GetVoter() {
-			return nil, fmt.Errorf("ballot already exists for AddBallot")
-		}
-	}
-
 beforeUUID:
 	ballot.Id = uuid.NewString()
 
@@ -59,18 +53,13 @@ beforeUUID:
 
 	for _, election := range stv.GetElections() {
 		if election.GetId() == ballot.GetElection() {
-			for _, voter := range stv.GetVoters() {
-				if voter.GetEmail() == ballot.GetVoter() {
-					stv.Ballots = append(stv.GetBallots(), ballot)
+			stv.Ballots = append(stv.GetBallots(), ballot)
 
-					if err = store.backend.Write(stv); err != nil {
-						return nil, err
-					}
-
-					return ballot, nil
-				}
+			if err = store.backend.Write(stv); err != nil {
+				return nil, err
 			}
-			return nil, fmt.Errorf("unable to find voter for AddBallot")
+
+			return ballot, nil
 		}
 	}
 

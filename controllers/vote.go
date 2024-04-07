@@ -121,6 +121,10 @@ func (r *VoteRepo) AddVote(c echo.Context) error {
 		return fmt.Errorf("url not found")
 	}
 
+	if u1.Voted {
+		return fmt.Errorf("this url has expired")
+	}
+
 	err = c.Request().ParseForm()
 	if err != nil {
 		return err
@@ -134,7 +138,6 @@ func (r *VoteRepo) AddVote(c echo.Context) error {
 
 	ballot := &storage.Ballot{
 		Election: u1.GetElection(),
-		Voter:    u1.GetVoter(),
 		Choice:   m,
 	}
 
