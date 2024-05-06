@@ -14,7 +14,7 @@ message STV {
 message Ballot {
     string id = 1;
     string election = 2;
-    map<uint64, string> choice = 4; // map[order, candidate id]
+    map<uint64, string> choice = 3; // map[order, candidate id]
 }
 
 message Candidate {
