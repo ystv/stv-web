@@ -262,15 +262,14 @@ func (r *AdminRepo) AddElection(c echo.Context) error {
 	if len(tempRon) > 0 {
 		ron = true
 	}
-	var seats uint64 = 1
-	tmpParsedSeats, err := strconv.ParseUint(tempSeats, 10, 64)
+	var seats uint64
+	seats, err := strconv.ParseUint(tempSeats, 10, 64)
 	if err != nil {
 		return r.errorHandle(c, fmt.Errorf("number of seats must be an positive integer value between 1 and 3"))
 	}
-	if tmpParsedSeats < 1 || tmpParsedSeats > 3 {
+	if seats < 1 || seats > 3 {
 		return r.errorHandle(c, fmt.Errorf("number of seats must be an positive integer value between 1 and 3"))
 	}
-	seats = tmpParsedSeats
 	if len(name) == 0 {
 		return r.errorHandle(c, fmt.Errorf("name and description need to be filled"))
 	}
@@ -302,15 +301,14 @@ func (r *AdminRepo) EditElection(c echo.Context) error {
 	if len(tempRon) > 0 {
 		ron = true
 	}
-	var seats uint64 = 1
-	tmpParsedSeats, err := strconv.ParseUint(tempSeats, 10, 64)
+	var seats uint64
+	seats, err := strconv.ParseUint(tempSeats, 10, 64)
 	if err != nil {
 		return r.errorHandle(c, fmt.Errorf("number of seats must be an positive integer value between 1 and 3"))
 	}
-	if tmpParsedSeats < 1 || tmpParsedSeats > 3 {
+	if seats < 1 || seats > 3 {
 		return r.errorHandle(c, fmt.Errorf("number of seats must be an positive integer value between 1 and 3"))
 	}
-	seats = tmpParsedSeats
 	if len(name) == 0 {
 		return r.errorHandle(c, fmt.Errorf("name and description need to be filled"))
 	}
@@ -525,9 +523,9 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 		return r.errorHandle(c, fmt.Errorf("invalid abount of winners"))
 	}
 
-	var names []string
-	for _, w := range winners {
-		names = append(names, w.Name)
+	names := make([]string, len(winners))
+	for i, w := range winners {
+		names[i] = w.Name
 	}
 
 	result.Winners = names

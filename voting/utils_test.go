@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func ParseBLT(tb testing.TB, file string) ([]*Candidate, []*Ballot, int) {
+func ParseBLT(tb testing.TB, file string) ([]*Candidate, []*Ballot, uint64) {
 	tb.Helper()
 
 	fd, err := testdata.Open(file)
@@ -23,7 +23,8 @@ func ParseBLT(tb testing.TB, file string) ([]*Candidate, []*Ballot, int) {
 	sc := bufio.NewScanner(fd)
 	candidates := make([]*Candidate, 0)
 	ballots := make([]*Ballot, 0)
-	var numCandidates, numSeats int
+	var numCandidates int
+	var numSeats uint64
 
 	/*
 			Structure of a .blt file (from https://stackoverflow.com/a/2234236/2586553):
