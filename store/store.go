@@ -248,6 +248,7 @@ func (store *Store) EditElection(election *storage.Election) (*storage.Election,
 			e.Name = election.GetName()
 			e.Description = election.GetDescription()
 			e.Ron = election.GetRon()
+			e.Seats = election.GetSeats()
 			e.Open = election.GetOpen()
 			e.Closed = election.GetClosed()
 			e.Result = election.GetResult()
