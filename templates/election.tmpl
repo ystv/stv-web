@@ -6,93 +6,105 @@
                 <a class="button is-link" href="/admin/elections">Return to list</a><br><br>
                 {{with .Election}}
                 <p>You are viewing ({{.Name}})<br>
-                Name: {{.Name}}<br>
-                Description: {{.Description}}<br>
-                Is R.O.N. enabled: {{if .Ron}}enabled{{else}}disabled{{end}}<br><br>
-                {{if and (not .Open) (not .Closed)}}
+                    Name: {{.Name}}<br>
+                    Description: {{.Description}}<br>
+                    Is R.O.N. enabled: {{if .Ron}}enabled{{else}}disabled{{end}}<br>
+                    Number of seats: {{.Seats}}<br><br>
+                    {{if and (not .Open) (not .Closed)}}
                     Current state: Yet to be opened, can still edit this election<br><br>
-                    Next action to take:<br><a class="button is-danger" onclick="openElectionModal()">Open election</a><br><br><br>
-                    Edit Election:<br><a class="button is-warning" onclick="editElectionModal()">Edit election</a><br><br><br>
+                    Next action to take:<br><a class="button is-danger" onclick="openElectionModal()">Open election</a>
+                    <br><br><br>
+                    Edit Election:<br><a class="button is-warning" onclick="editElectionModal()">Edit election</a><br>
+                    <br><br>
                     Remove Election:<br><a class="button is-danger" onclick="removeElectionModal()">Remove Election</a>
-                {{else if and .Open (not .Closed)}}
+                    {{else if and .Open (not .Closed)}}
                     Click the button below to refresh ballots<br>
                     Current ballots (ballots / voters): {{$.Ballots}}/{{.Voters}} ({{divPercent $.Ballots .Voters}})<br>
                     <a class="button" href="/admin/election/{{.Id}}">Refresh</a><br><br>
                     Current state: Open<br><br>
                     Next action to take: <a class="button is-danger" onclick="closeElectionModal()">Close election</a>
-                {{else if and (not .Open) .Closed}}
-                    Voting stats (ballots / voters): {{$.Ballots}}/{{.Voters}} ({{divPercent $.Ballots .Voters}}%)<br><br>
+                    {{else if and (not .Open) .Closed}}
+                    Voting stats (ballots / voters): {{$.Ballots}}/{{.Voters}} ({{divPercent $.Ballots .Voters}}
+                    %)<br><br>
                     Current state: Closed<br><br>
                     {{with .Result}}
-                        <strong>Winner: {{.Winner}}</strong><br><br>
-                        Number or rounds: {{.Rounds}}<br>
-                        </p>
-                        <table class="table">
-                            <thead>
-                            <tr>
-                                <th>Round No.</th>
-                                <th>No. of blank votes</th>
-                                <th>Candidate Status</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            {{range .Round}}
+                    {{if eq (len .Winners) 1}}
+                    <strong>Winner: {{index .Winners 0}}</strong>
+                {{else}}
+                    <strong>Winners:<br>
+                        {{range .Winners}}
+                            &ensp;&ensp;&bull;&ensp;{{.}}<br>
+                        {{end}}
+                    </strong>
+                {{end}}<br><br>
+                    Number or rounds: {{.Rounds}}<br>
+                </p>
+            <table class="table">
+                <thead>
+                <tr>
+                    <th>Round No.</th>
+                    <th>No. of blank votes</th>
+                    <th>Candidate Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                {{range .Round}}
+                    <tr>
+                        <td>{{incUInt64 .Round}}</td>
+                        <td>{{.Blanks}}</td>
+                        <td>
+                            <table class="table">
+                                <thead>
                                 <tr>
-                                    <td>{{incUInt64 .Round}}</td>
-                                    <td>{{.Blanks}}</td>
-                                    <td>
-                                        <table class="table">
-                                            <thead>
-                                                <tr>
-                                                    <th>Candidate Rank</th>
-                                                    <th>Candidate</th>
-                                                    <th>No. of votes</th>
-                                                    <th>Status</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                            {{range .CandidateStatus}}
-                                                <tr>
-                                                    <td>{{incUInt64 .CandidateRank}}</td>
-                                                    {{if eq .Id "R.O.N."}}
-                                                        <td>R.O.N.</td>
-                                                    {{else}}
-                                                        {{ $candidateId := .Id }}
-                                                        {{range $.Candidates}}
-                                                            {{if eq .Id $candidateId}}
-                                                                <td>{{.Name}}</td>
-                                                            {{end}}
-                                                        {{end}}
-                                                    {{end}}
-                                                    <td>{{.NoOfVotes}}</td>
-                                                    <td>{{.Status}}</td>
-                                                </tr>
-                                            {{end}}
-                                            </tbody>
-                                            <tfoot>
-                                                <tr>
-                                                    <th>Candidate Rank</th>
-                                                    <th>Candidate</th>
-                                                    <th>No. of votes</th>
-                                                    <th>Status</th>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
-                                    </td>
+                                    <th>Candidate Rank</th>
+                                    <th>Candidate</th>
+                                    <th>No. of votes</th>
+                                    <th>Status</th>
                                 </tr>
-                            {{end}}
-                            </tbody>
-                            <tfoot>
-                            <tr>
-                                <th>Round No.</th>
-                                <th>No. of blank votes</th>
-                                <th>Candidate Status</th>
-                            </tr>
-                            </tfoot>
-                        </table>
-                    {{end}}
-                    <p>Remove Election:<br><a class="button is-danger" onclick="removeElectionModal()">Remove Election</a>
+                                </thead>
+                                <tbody>
+                                {{range .CandidateStatus}}
+                                    <tr>
+                                        <td>{{incUInt64 .CandidateRank}}</td>
+                                        {{if eq .Id "R.O.N."}}
+                                            <td>R.O.N.</td>
+                                        {{else}}
+                                            {{ $candidateId := .Id }}
+                                            {{range $.Candidates}}
+                                                {{if eq .Id $candidateId}}
+                                                    <td>{{.Name}}</td>
+                                                {{end}}
+                                            {{end}}
+                                        {{end}}
+                                        <td>{{.NoOfVotes}}</td>
+                                        <td>{{.Status}}</td>
+                                    </tr>
+                                {{end}}
+                                </tbody>
+                                <tfoot>
+                                <tr>
+                                    <th>Candidate Rank</th>
+                                    <th>Candidate</th>
+                                    <th>No. of votes</th>
+                                    <th>Status</th>
+                                </tr>
+                                </tfoot>
+                            </table>
+                        </td>
+                    </tr>
                 {{end}}
+                </tbody>
+                <tfoot>
+                <tr>
+                    <th>Round No.</th>
+                    <th>No. of blank votes</th>
+                    <th>Candidate Status</th>
+                </tr>
+                </tfoot>
+            </table>
+                {{end}}
+                <p>Remove Election:<br><a class="button is-danger" onclick="removeElectionModal()">Remove Election</a>
+                    {{end}}
                 </p>
             </div>
         </div>
@@ -107,30 +119,31 @@
                 {{end}}
                 <table class="table is-striped">
                     <thead>
-                        <tr>
-                            <th>Candidate</th>
-                            {{if and (and (not $.Election.Open) (not $.Election.Closed)) (ne (len .Candidates) 0)}}
-                                <th>Remove</th>
-                            {{end}}
-                        </tr>
+                    <tr>
+                        <th>Candidate</th>
+                        {{if and (and (not $.Election.Open) (not $.Election.Closed)) (ne (len .Candidates) 0)}}
+                            <th>Remove</th>
+                        {{end}}
+                    </tr>
                     </thead>
                     <tbody>
-                        {{range .Candidates}}
-                            <tr>
-                                <td>{{.Name}}</td>
-                                {{if and (not $.Election.Open) (not $.Election.Closed)}}
-                                    <td><a class="button is-danger" onclick="removeCandidateModal({{.Id}}, {{.Name}})">Remove</a></td>
-                                {{end}}
-                            </tr>
-                        {{end}}
-                        {{if .Election.Ron}}
-                            <tr>
-                                <td>R.O.N.</td>
-                                {{if and (not .Election.Open) (not .Election.Closed)}}
-                                    <td></td>
-                                {{end}}
-                            </tr>
-                        {{end}}
+                    {{range .Candidates}}
+                        <tr>
+                            <td>{{.Name}}</td>
+                            {{if and (not $.Election.Open) (not $.Election.Closed)}}
+                                <td><a class="button is-danger" onclick="removeCandidateModal({{.Id}}, {{.Name}})">Remove</a>
+                                </td>
+                            {{end}}
+                        </tr>
+                    {{end}}
+                    {{if .Election.Ron}}
+                        <tr>
+                            <td>R.O.N.</td>
+                            {{if and (not .Election.Open) (not .Election.Closed)}}
+                                <td></td>
+                            {{end}}
+                        </tr>
+                    {{end}}
                     </tbody>
                     <tfoot>
                     <tr>
@@ -138,12 +151,12 @@
                         {{if and (and (not $.Election.Open) (not $.Election.Closed)) (ne (len .Candidates) 0)}}
                             <th>Remove</th>
                         {{end}}
-                        </tr>
+                    </tr>
                     </tfoot>
                 </table>
-        {{with .Election}}
-            {{if and (not .Open) (not .Closed)}}
-                <br><br>
+                {{with .Election}}
+                {{if and (not .Open) (not .Closed)}}
+                    <br><br>
                     <p>Enter the name of the candidate.</p>
                     <br>
                     <form id="addCandidate" action="/admin/election/candidate/{{.Id}}" method="post"
@@ -165,7 +178,7 @@
         <div class="card">
             <div class="card-content">
                 <p>Below is the list of excluded voters from this election, use this to exclude candidates from running.<br>
-                This is manual in case of pairs running.</p>
+                    This is manual in case of pairs running.</p>
                 <br><br>
                 <table class="table">
                     <thead>
@@ -173,7 +186,7 @@
                         <th>Voter</th>
                         <th>Email</th>
                         {{if and (not .Open) (not .Closed)}}
-                        <th>Include again</th>
+                            <th>Include again</th>
                         {{end}}
                     </tr>
                     </thead>
@@ -183,8 +196,11 @@
                             <td>{{.Name}}</td>
                             <td>{{.Email}}</td>
                             {{if and (not $.Election.Open) (not $.Election.Closed)}}
-                            <td><form id="includeForm" action="/admin/election/include/{{$.Election.Id}}/{{.Email}}" method="post">
-                            <a class="button is-warning" onclick="includeVoter()">Include again</a></form></td>
+                                <td>
+                                    <form id="includeForm" action="/admin/election/include/{{$.Election.Id}}/{{.Email}}"
+                                          method="post">
+                                        <a class="button is-warning" onclick="includeVoter()">Include again</a></form>
+                                </td>
                             {{end}}
                         </tr>
                     {{end}}
@@ -194,7 +210,7 @@
                         <th>Voter</th>
                         <th>Email</th>
                         {{if and (not .Open) (not .Closed)}}
-                        <th>Include again</th>
+                            <th>Include again</th>
                         {{end}}
                     </tr>
                     </tfoot>
@@ -204,233 +220,335 @@
                 <br>
                 <form id="excludeForm" action="/admin/election/exclude/{{.Id}}" method="post"
                       style="max-width: 500px">
-                    <div class="field">
-                        <label class="label" for="excludeDropDown">Use the drop-down to select the user to exclude from this election.</label>
-                        <div class="control">
-                            <div class="select">
-                                <select id="excludeDropDown" name="email" form="excludeForm">
-                                    <option value="" disabled selected>Please select</option>
-                                    {{range $.VotersList}}
-                                        <option value="{{.Email}}">{{.Name}} <{{.Email}}></option>
-                                    {{end}}
-                                </select>
-                            </div>
+                    <label class="label" for="excludeDropDown">Use the drop-down to select the user to exclude from this
+                        election.</label>
+                    <pre id="excludedSelected">Please select</pre><br>
+                    <div class="dropdown">
+                        <a onclick="showExcludeDropdown()" class="button is-info dropDownButton">Exclude drop down list</a>
+                        <div id="excludeDropDown" class="dropdown-content">
+                            <input type="text" placeholder="Search.." id="excludeDropDownSearch"
+                                   onkeyup="excludeListFilter()">
+                            {{range $.VotersList}}
+                                <a onclick="setExcludedEmail('{{.Name}}', '{{.Email}}')">{{.Name}} ({{.Email}})</a>
+                            {{end}}
                         </div>
                     </div>
+                    <input id="emailHidden" name="email" style="display: none" hidden="hidden">
+                    <br><br>
                     <a class="button is-link" onclick="submitNewExclude()">Exclude voter</a>
                 </form>
+            </div>
+        </div>
+        <br>
+        <br>
+        <div id="openModal" class="modal">
+            <div class="modal-background"></div>
+            <div class="modal-content">
+                <div class="box">
+                    <article class="media">
+                        <div class="media-content">
+                            <div class="content">
+                                <p class="title">Open ({{.Name}})</p>
+                                <p>If you open the election, then an email will be sent to every voter allowing
+                                    them to vote.<br>
+                                    You will no longer be able to edit this election!<br>
+                                    <strong>This action cannot be undone!</strong><br></p>
+                                <form id="openElectionForm" action="/admin/election/open/{{.Id}}" method="post">
+                                    <button class="button is-danger" onclick="openElection()">Open Election</button>
+                                </form>
+                            </div>
+                        </div>
+                    </article>
                 </div>
             </div>
-            <br>
-            <br>
-            <div id="openModal" class="modal">
-                <div class="modal-background"></div>
-                <div class="modal-content">
-                    <div class="box">
-                        <article class="media">
-                            <div class="media-content">
-                                <div class="content">
-                                    <p class="title">Open ({{.Name}})</p>
-                                    <p>If you open the election, then an email will be sent to every voter allowing
-                                        them to vote.<br>
-                                        You will no longer be able to edit this election!<br>
-                                        <strong>This action cannot be undone!</strong><br></p>
-                                    <form id="openElectionForm" action="/admin/election/open/{{.Id}}" method="post">
-                                        <button class="button is-danger" onclick="openElection()">Open Election</button>
-                                    </form>
-                                </div>
+            <button class="modal-close is-large" aria-label="close"></button>
+        </div>
+        <div id="editModal" class="modal">
+            <div class="modal-background"></div>
+            <div class="modal-content">
+                <div class="box">
+                    <article class="media">
+                        <div class="media-content">
+                            <div class="content">
+                                <p class="title">Edit ({{.Name}})</p>
+                                <form id="editElection" action="/admin/election/edit/{{.Id}}"
+                                      method="post" style="max-width: 500px">
+                                    <div class="field">
+                                        <label class="label" for="name1">Name</label>
+                                        <div class="control">
+                                            <input class="input" type="text" id="name1" name="name1"
+                                                   placeholder="Enter name" value="{{.Name}}">
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <label class="label" for="description">Description</label>
+                                        <div class="control">
+                                            <input class="input" type="text" placeholder="Enter description"
+                                                   id="description"
+                                                   name="description" value="{{.Description}}">
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <label class="checkbox" for="ron">Include R.O.N.</label>
+                                        <div class="control">
+                                            <input type="checkbox" name="ron" id="ron"
+                                                   {{if .Ron}}checked{{end}}>
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <label class="label" for="seats">Use the drop-down to select the number of seats
+                                            that
+                                            are open in this election.<br>
+                                            For most elections this will be one seat,
+                                            although a maximum of three seats are available.</label>
+                                        <div class="control">
+                                            <div class="select">
+                                                <select id="seats" name="seats" form="editElection">
+                                                    <option value="1" {{if eq .Seats 1}}selected{{end}}>1</option>
+                                                    <option value="2" {{if eq .Seats 2}}selected{{end}}>2</option>
+                                                    <option value="3" {{if eq .Seats 3}}selected{{end}}>3</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button class="button is-link" onclick="submitEditElection()">Edit
+                                        election
+                                    </button>
+                                </form>
                             </div>
-                        </article>
-                    </div>
+                        </div>
+                    </article>
                 </div>
-                <button class="modal-close is-large" aria-label="close"></button>
             </div>
-            <div id="editModal" class="modal">
-                <div class="modal-background"></div>
-                <div class="modal-content">
-                    <div class="box">
-                        <article class="media">
-                            <div class="media-content">
-                                <div class="content">
-                                    <p class="title">Edit ({{.Name}})</p>
-                                    <form id="editElection" action="/admin/election/edit/{{.Id}}"
-                                          method="post" style="max-width: 500px">
-                                        <div class="field">
-                                            <label class="label" for="name1">Name</label>
-                                            <div class="control">
-                                                <input class="input" type="text" id="name1" name="name1"
-                                                       placeholder="Enter name" value="{{.Name}}">
-                                            </div>
-                                        </div>
-                                        <div class="field">
-                                            <label class="label" for="description">Description</label>
-                                            <div class="control">
-                                                <input class="input" type="text" placeholder="Enter description"
-                                                       id="description"
-                                                       name="description" value="{{.Description}}">
-                                            </div>
-                                        </div>
-                                        <div class="field">
-                                            <label class="checkbox" for="ron">Include R.O.N.</label>
-                                            <div class="control">
-                                                <input type="checkbox" name="ron" id="ron"
-                                                       {{if .Ron}}checked{{end}}>
-                                            </div>
-                                        </div>
-                                        <button class="button is-link" onclick="submitEditElection()">Edit
-                                            election
-                                        </button>
-                                    </form>
-                                </div>
+            <button class="modal-close is-large" aria-label="close"></button>
+        </div>
+        <div id="removeCandidateModal" class="modal">
+            <div class="modal-background"></div>
+            <div class="modal-content">
+                <div class="box">
+                    <article class="media">
+                        <div class="media-content">
+                            <div class="content">
+                                <p class="title" id="candidateModalTitle"></p>
+                                <p><strong>This action cannot be undone</strong><br></p>
+                                <form id="removeCandidateForm" method="post">
+                                    <button class="button is-danger" onclick="removeCandidate()">Remove</button>
+                                </form>
                             </div>
-                        </article>
-                    </div>
+                        </div>
+                    </article>
                 </div>
-                <button class="modal-close is-large" aria-label="close"></button>
             </div>
-            <div id="removeCandidateModal" class="modal">
-                <div class="modal-background"></div>
-                <div class="modal-content">
-                    <div class="box">
-                        <article class="media">
-                            <div class="media-content">
-                                <div class="content">
-                                    <p class="title" id="candidateModalTitle"></p>
-                                    <p><strong>This action cannot be undone</strong><br></p>
-                                    <form id="removeCandidateForm" method="post">
-                                        <button class="button is-danger" onclick="removeCandidate()">Remove</button>
-                                    </form>
-                                </div>
+            <button class="modal-close is-large" aria-label="close"></button>
+        </div>{{else}}</div></div>{{end}}
+    {{if and .Open (not .Closed)}}
+        <div id="closeModal" class="modal">
+            <div class="modal-background"></div>
+            <div class="modal-content">
+                <div class="box">
+                    <article class="media">
+                        <div class="media-content">
+                            <div class="content">
+                                <p class="title">Close ({{.Name}})</p>
+                                <p>If you close the election, then any remaining voters will not be able to vote.<br>
+                                    <strong>This action cannot be undone!</strong><br></p>
+                                <form id="closeElectionForm" action="/admin/election/close/{{.Id}}" method="post">
+                                    <button class="button is-danger" onclick="closeElection()">Close Election
+                                    </button>
+                                </form>
                             </div>
-                        </article>
-                    </div>
+                        </div>
+                    </article>
                 </div>
-                <button class="modal-close is-large" aria-label="close"></button>
-            </div>{{else}}</div></div>{{end}}
-        {{if and .Open (not .Closed)}}
-            <div id="closeModal" class="modal">
-                <div class="modal-background"></div>
-                <div class="modal-content">
-                    <div class="box">
-                        <article class="media">
-                            <div class="media-content">
-                                <div class="content">
-                                    <p class="title">Close ({{.Name}})</p>
-                                    <p>If you close the election, then any remaining voters will not be able to vote.<br>
-                                        <strong>This action cannot be undone!</strong><br></p>
-                                    <form id="closeElectionForm" action="/admin/election/close/{{.Id}}" method="post">
-                                        <button class="button is-danger" onclick="closeElection()">Close Election
-                                        </button>
-                                    </form>
-                                </div>
+            </div>
+            <button class="modal-close is-large" aria-label="close"></button>
+        </div>{{end}}
+    {{if not .Open}}
+        <div id="removeModal" class="modal">
+            <div class="modal-background"></div>
+            <div class="modal-content">
+                <div class="box">
+                    <article class="media">
+                        <div class="media-content">
+                            <div class="content">
+                                <p class="title">Are you sure you want to remove ({{.Name}})</p>
+                                <p><strong>This action cannot be undone</strong><br></p>
+                                <form id="removeElectionForm" action="/admin/election/delete/{{.Id}}" method="post">
+                                    <button class="button is-danger" onclick="removeElection()">Remove</button>
+                                </form>
                             </div>
-                        </article>
-                    </div>
+                        </div>
+                    </article>
                 </div>
-                <button class="modal-close is-large" aria-label="close"></button>
-            </div>{{end}}
-        {{if not .Open}}
-            <div id="removeModal" class="modal">
-                <div class="modal-background"></div>
-                <div class="modal-content">
-                    <div class="box">
-                        <article class="media">
-                            <div class="media-content">
-                                <div class="content">
-                                    <p class="title">Are you sure you want to remove ({{.Name}})</p>
-                                    <p><strong>This action cannot be undone</strong><br></p>
-                                    <form id="removeElectionForm" action="/admin/election/delete/{{.Id}}" method="post">
-                                        <button class="button is-danger" onclick="removeElection()">Remove</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </article>
-                    </div>
-                </div>
-                <button class="modal-close is-large" aria-label="close"></button>
-            </div>{{end}}
-        <br><br><br>
-        <script>
-            document.querySelectorAll(
-                ".modal-background, .modal-close,.modal-card-head .delete, .modal-card-foot .button"
-            ).forEach(($el) => {
-                const $modal = $el.closest(".modal");
-                $el.addEventListener("click", () => {
-                    $modal.classList.remove("is-active");
-                });
+            </div>
+            <button class="modal-close is-large" aria-label="close"></button>
+        </div>{{end}}
+    <br><br><br>
+    <style>
+        .dropDownButton {
+            background-color: #04AA6D;
+            color: white;
+            padding: 16px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .dropDownButton:hover, .dropDownButton:focus {
+            background-color: #3e8e41;
+        }
+
+        #excludeDropDownSearch {
+            box-sizing: border-box;
+            background-position: 14px 12px;
+            background-repeat: no-repeat;
+            font-size: 16px;
+            padding: 14px 20px 12px 20px;
+            border: none;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #excludeDropDownSearch:focus {
+            outline: 3px solid #ddd;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f6f6f6;
+            min-width: 230px;
+            overflow: auto;
+            border: 1px solid #ddd;
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown a:hover {
+            background-color: #ddd;
+        }
+
+        .show {
+            display: block;
+        }
+    </style>
+    <script>
+        document.querySelectorAll(
+            ".modal-background, .modal-close,.modal-card-head .delete, .modal-card-foot .button"
+        ).forEach(($el) => {
+            const $modal = $el.closest(".modal");
+            $el.addEventListener("click", () => {
+                $modal.classList.remove("is-active");
             });
+        });
 
-            {{if and (not .Open) (not .Closed)}}
+        {{if and (not .Open) (not .Closed)}}
 
-            function editElectionModal() {
-                document.getElementById("editModal").classList.add("is-active");
+        function editElectionModal() {
+            document.getElementById("editModal").classList.add("is-active");
+        }
+
+        function submitEditElection() {
+            if (document.getElementById("name1").value.length > 0 && document.getElementById("description").value.length > 0) {
+                document.getElementById("editElection").submit();
             }
+        }
 
-            function submitEditElection() {
-                if (document.getElementById("name1").value.length > 0 && document.getElementById("description").value.length > 0) {
-                    document.getElementById("editElection").submit();
+        function openElectionModal() {
+            document.getElementById("openModal").classList.add("is-active");
+        }
+
+        function includeVoter() {
+            document.getElementById("includeForm").submit();
+        }
+
+        function openElection() {
+            document.getElementById("openElectionForm").submit();
+        }
+
+        function submitNewCandidate() {
+            if (document.getElementById("name").value.length > 0) {
+                document.getElementById("addCandidate").submit();
+            }
+        }
+
+        function showExcludeDropdown() {
+            document.getElementById("excludeDropDown").classList.toggle("show");
+        }
+
+        function excludeListFilter() {
+            const input = document.getElementById("excludeDropDownSearch");
+            const filter = input.value.toUpperCase();
+            const div = document.getElementById("excludeDropDown");
+            const a = div.getElementsByTagName("a");
+            for (let i = 0; i < a.length; i++) {
+                let txtValue = a[i].textContent || a[i].innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    a[i].style.display = "";
+                } else {
+                    a[i].style.display = "none";
                 }
             }
+        }
 
-            function openElectionModal() {
-                document.getElementById("openModal").classList.add("is-active");
+        function setExcludedEmail(name, email) {
+            document.getElementById("excludedSelected").innerHTML = (name + " (" + email + ")");
+            document.getElementById("emailHidden").value = email;
+            showExcludeDropdown();
+        }
+
+        function submitNewExclude() {
+            console.log(document.getElementById("emailHidden").value);
+            if (document.getElementById("emailHidden").value.length > 0) {
+                document.getElementById("excludeForm").submit();
             }
+        }
 
-            function includeVoter() {
-                document.getElementById("includeForm").submit();
-            }
+        let candidateId = "";
 
-            function openElection() {
-                document.getElementById("openElectionForm").submit();
-            }
+        function removeCandidateModal(id1, name) {
+            candidateId = id1;
+            document.getElementById("removeCandidateModal").classList.add("is-active");
+            document.getElementById("candidateModalTitle").innerHTML = "Are you sure you want to remove (" + name + ")";
+        }
 
-            function submitNewCandidate() {
-                if (document.getElementById("name").value.length > 0) {
-                    document.getElementById("addCandidate").submit();
-                }
-            }
+        function removeCandidate() {
+            document.getElementById("removeCandidateForm").action = "/admin/election/candidate/delete/" + candidateId;
+            document.getElementById("removeCandidateForm").submit();
+        }
 
-            function submitNewExclude() {
-                if (document.getElementById("excludeDropDown").value.length > 0) {
-                    document.getElementById("excludeForm").submit();
-                }
-            }
-
-            let candidateId = "";
-
-            function removeCandidateModal(id1, name) {
-                candidateId = id1
-                document.getElementById("removeCandidateModal").classList.add("is-active");
-                document.getElementById("candidateModalTitle").innerHTML = "Are you sure you want to remove (" + name + ")";
-            }
-
-            function removeCandidate() {
-                document.getElementById("removeCandidateForm").action = '/admin/election/candidate/delete/' + candidateId;
-                document.getElementById("removeCandidateForm").submit();
-            }
-
-            {{end}}
-
-            {{if .Open}}
-
-            function closeElectionModal() {
-                document.getElementById("closeModal").classList.add("is-active");
-            }
-
-            function closeElection() {
-                document.getElementById("closeElectionForm").submit();
-            }{{end}}
-
-            {{if not .Open}}
-
-            function removeElectionModal() {
-                document.getElementById("removeModal").classList.add("is-active");
-            }
-
-            function removeElection() {
-                document.getElementById("removeElectionForm").submit();
-            }{{end}}
-        </script>
         {{end}}
+
+        {{if .Open}}
+
+        function closeElectionModal() {
+            document.getElementById("closeModal").classList.add("is-active");
+        }
+
+        function closeElection() {
+            document.getElementById("closeElectionForm").submit();
+        }{{end}}
+
+        {{if not .Open}}
+
+        function removeElectionModal() {
+            document.getElementById("removeModal").classList.add("is-active");
+        }
+
+        function removeElection() {
+            document.getElementById("removeElectionForm").submit();
+        }{{end}}
+    </script>
+    {{end}}
     </div>
 {{end}}
