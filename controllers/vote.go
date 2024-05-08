@@ -132,8 +132,9 @@ func (r *VoteRepo) AddVote(c echo.Context) error {
 
 	m := make(map[uint64]string)
 
-	for i := 0; i < len(c.Request().Form); i++ {
-		m[uint64(i)] = c.Request().Form.Get("order~" + strconv.FormatUint(uint64(i), 10))
+	var i uint64
+	for i = 0; i < uint64(len(c.Request().Form)); i++ {
+		m[i] = c.Request().Form.Get("order~" + strconv.FormatUint(i, 10))
 	}
 
 	ballot := &storage.Ballot{
