@@ -14,7 +14,7 @@ func DefaultSingleTransferableVoteOptions() SingleTransferableVoteOptions {
 	}
 }
 
-func SingleTransferableVote(candidates []*Candidate, ballots []*Ballot, numberOfSeats int, options SingleTransferableVoteOptions) (*ElectionResults, error) {
+func SingleTransferableVote(candidates []*Candidate, ballots []*Ballot, numberOfSeats uint64, options SingleTransferableVoteOptions) (*ElectionResults, error) {
 	roundingError := 1e-6
 	manager := NewElectionManager(candidates, ballots, ElectionManagerOptions{
 		NumberOfVotesPerVoter: 1,
@@ -45,13 +45,14 @@ func SingleTransferableVote(candidates []*Candidate, ballots []*Ballot, numberOf
 
 	candidatesInRaceLoop:
 		for i, candidate := range candidatesInRace {
-			votesForCandidate := candidatesInRaceVotes[i]
-			isLastCandidate := i == (len(candidatesInRace) - 1)
+			j := uint64(i)
+			votesForCandidate := candidatesInRaceVotes[j]
+			isLastCandidate := j == uint64(len(candidatesInRace)-1)
 
 			switch {
 			case votesForCandidate-roundingError >= votesNeededToWin:
 				candidatesToElect = append(candidatesToElect, candidate)
-			case i >= seatsLeft && (votesRemaining-roundingError) <= lastVotes:
+			case j >= seatsLeft && (votesRemaining-roundingError) <= lastVotes:
 				if len(candidatesToElect) > 0 {
 					break candidatesInRaceLoop
 				}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 
@@ -201,14 +202,22 @@ func (r *AdminRepo) Election(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 	if election.GetResult() != nil {
-		if len(election.GetResult().GetWinner()) > 0 && election.GetResult().GetWinner() != "R.O.N." {
-			var candidate *storage.Candidate
-			candidate, err = r.store.FindCandidate(election.GetResult().GetWinner())
-			if err != nil {
-				fmt.Println(err)
-				candidate = &storage.Candidate{Name: election.GetResult().GetWinner()}
+		if len(election.GetResult().GetWinners()) > 0 {
+			var winningCandidates []string
+			for _, wc := range election.GetResult().GetWinners() {
+				if wc == "R.O.N." {
+					winningCandidates = append(winningCandidates, "R.O.N.")
+					continue
+				}
+				var candidate *storage.Candidate
+				candidate, err = r.store.FindCandidate(wc)
+				if err != nil {
+					fmt.Println(err)
+					candidate = &storage.Candidate{Name: wc}
+				}
+				winningCandidates = append(winningCandidates, candidate.GetName())
 			}
-			election.GetResult().Winner = candidate.GetName()
+			election.GetResult().Winners = winningCandidates
 		}
 	}
 	var noOfBallots uint64
@@ -248,10 +257,20 @@ func (r *AdminRepo) AddElection(c echo.Context) error {
 	name := c.FormValue("name")
 	description := c.FormValue("description")
 	tempRon := c.FormValue("ron")
+	tempSeats := c.FormValue("seats")
 	ron := false
 	if len(tempRon) > 0 {
 		ron = true
 	}
+	var seats uint64 = 1
+	tmpParsedSeats, err := strconv.ParseUint(tempSeats, 10, 64)
+	if err != nil {
+		return r.errorHandle(c, fmt.Errorf("number of seats must be an positive integer value between 1 and 3"))
+	}
+	if tmpParsedSeats < 1 || tmpParsedSeats > 3 {
+		return r.errorHandle(c, fmt.Errorf("number of seats must be an positive integer value between 1 and 3"))
+	}
+	seats = tmpParsedSeats
 	if len(name) == 0 {
 		return r.errorHandle(c, fmt.Errorf("name and description need to be filled"))
 	}
@@ -259,6 +278,7 @@ func (r *AdminRepo) AddElection(c echo.Context) error {
 		Name:        name,
 		Description: description,
 		Ron:         ron,
+		Seats:       seats,
 	}
 
 	e1, err := r.store.AddElection(election)
@@ -277,10 +297,20 @@ func (r *AdminRepo) EditElection(c echo.Context) error {
 	name := c.FormValue("name1")
 	description := c.FormValue("description")
 	tempRon := c.FormValue("ron")
+	tempSeats := c.FormValue("seats")
 	ron := false
 	if len(tempRon) > 0 {
 		ron = true
 	}
+	var seats uint64 = 1
+	tmpParsedSeats, err := strconv.ParseUint(tempSeats, 10, 64)
+	if err != nil {
+		return r.errorHandle(c, fmt.Errorf("number of seats must be an positive integer value between 1 and 3"))
+	}
+	if tmpParsedSeats < 1 || tmpParsedSeats > 3 {
+		return r.errorHandle(c, fmt.Errorf("number of seats must be an positive integer value between 1 and 3"))
+	}
+	seats = tmpParsedSeats
 	if len(name) == 0 {
 		return r.errorHandle(c, fmt.Errorf("name and description need to be filled"))
 	}
@@ -289,6 +319,7 @@ func (r *AdminRepo) EditElection(c echo.Context) error {
 		Name:        name,
 		Description: description,
 		Ron:         ron,
+		Seats:       seats,
 	}
 
 	e1, err := r.store.EditElection(election)
@@ -426,6 +457,10 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 		return r.errorHandle(c, fmt.Errorf("cannot reclose election that has been closed"))
 	}
 
+	if election.Seats < 1 {
+		return r.errorHandle(c, fmt.Errorf("cannot close election that has no or negative seats: %d", election.Seats))
+	}
+
 	ballots, err := r.store.GetBallotsElectionID(id)
 	if err != nil {
 		return r.errorHandle(c, err)
@@ -461,7 +496,7 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 		ballotsVoting = append(ballotsVoting, voting.NewBallot(c2))
 	}
 
-	electionResults, err := voting.SingleTransferableVote(candidates, ballotsVoting, 1, voting.DefaultSingleTransferableVoteOptions())
+	electionResults, err := voting.SingleTransferableVote(candidates, ballotsVoting, election.Seats, voting.DefaultSingleTransferableVoteOptions())
 	if err != nil {
 		return r.errorHandle(c, fmt.Errorf("election failed: %w", err))
 	}
@@ -486,11 +521,16 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 	}
 	winners := electionResults.GetWinners()
 
-	if len(winners) != 1 {
+	if uint64(len(winners)) != election.Seats {
 		return r.errorHandle(c, fmt.Errorf("invalid abount of winners"))
 	}
 
-	result.Winner = winners[0].Name
+	var names []string
+	for _, w := range winners {
+		names = append(names, w.Name)
+	}
+
+	result.Winners = names
 
 	election.Result = result
 

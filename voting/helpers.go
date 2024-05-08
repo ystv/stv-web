@@ -336,12 +336,12 @@ func (em *ElectionManager) GetNumberOfNonExhaustedBallots() float64 {
 	return float64(len(em.Ballots) - len(em.ExhaustedBallots))
 }
 
-func (em *ElectionManager) GetNumberOfCandidatesInRace() int {
-	return len(em.GetCandidatesInRace())
+func (em *ElectionManager) GetNumberOfCandidatesInRace() uint64 {
+	return uint64(len(em.GetCandidatesInRace()))
 }
 
-func (em *ElectionManager) GetNumberOfElectedCandidates() int {
-	return len(em.CandidatesElected)
+func (em *ElectionManager) GetNumberOfElectedCandidates() uint64 {
+	return uint64(len(em.CandidatesElected))
 }
 
 func (em *ElectionManager) GetNumberOfVotes(candidate *Candidate) (float64, error) {

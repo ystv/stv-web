@@ -105,6 +105,21 @@
                             <input type="checkbox" name="ron" id="ron" checked>
                         </div>
                     </div>
+                    <div class="field">
+                        <label class="label" for="seats">Use the drop-down to select the number of seats that
+                            are open in this election.<br>
+                        For most elections this will be one seat,
+                            although a maximum of three seats are available.</label>
+                        <div class="control">
+                            <div class="select">
+                                <select id="seats" name="seats" form="addElection">
+                                    <option value="1" selected>1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                     <a class="button is-link" onclick="submitNewElection()">Add election</a>
                 </form>
             </div>

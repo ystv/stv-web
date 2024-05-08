@@ -28,16 +28,17 @@ message Election {
     string name = 2;
     string description = 3;
     bool ron = 4;
-    bool open = 5;
-    bool closed = 6;
-    Result result = 7;
-    repeated Voter excluded = 8;
-    uint64 voters = 9;
+    uint64 seats = 5;
+    bool open = 6;
+    bool closed = 7;
+    Result result = 8;
+    repeated Voter excluded = 9;
+    uint64 voters = 10;
 }
 
 message Result {
     uint64 rounds = 1;
-    string winner = 2;
+    repeated string winners = 2;
     repeated Round round = 3;
 }
 
