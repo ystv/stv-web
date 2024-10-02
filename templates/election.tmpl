@@ -24,8 +24,7 @@
                     Current state: Open<br><br>
                     Next action to take: <a class="button is-danger" onclick="closeElectionModal()">Close election</a>
                     {{else if and (not .Open) .Closed}}
-                    Voting stats (ballots / voters): {{$.Ballots}}/{{.Voters}} ({{divPercent $.Ballots .Voters}}
-                    %)<br><br>
+                    Voting stats (ballots / voters): {{$.Ballots}}/{{.Voters}} ({{divPercent $.Ballots .Voters}})<br><br>
                     Current state: Closed<br><br>
                     {{with .Result}}
                     {{if eq (len .Winners) 1}}
