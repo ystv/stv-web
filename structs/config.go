@@ -15,6 +15,8 @@ type (
 		Address               string `toml:"address"`
 		DomainName            string `toml:"domain_name"`
 		ForceResetURLEndpoint string `toml:"force_reset_url_endpoint"`
+		Commit                string
+		Version               string
 	}
 
 	AD struct {

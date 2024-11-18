@@ -20,14 +20,18 @@ type AdminRepo struct {
 	mailer     *utils.Mailer
 	store      *store.Store
 	mailConfig utils.MailConfig
+	commit     string
+	version    string
 }
 
-func NewAdminRepo(controller Controller, mailer *utils.Mailer, store *store.Store, mailConfig utils.MailConfig) *AdminRepo {
+func NewAdminRepo(controller Controller, mailer *utils.Mailer, store *store.Store, mailConfig utils.MailConfig, commit, version string) *AdminRepo {
 	return &AdminRepo{
 		controller: controller,
 		mailer:     mailer,
 		store:      store,
 		mailConfig: mailConfig,
+		commit:     commit,
+		version:    version,
 	}
 }
 

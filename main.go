@@ -179,7 +179,7 @@ func main() {
 
 	router1 := New(NewRouter{
 		Config: config,
-		Repos:  controllers.NewRepos(controller, mailer, newStore, mailConfig),
+		Repos:  controllers.NewRepos(controller, mailer, newStore, mailConfig, Commit, Version),
 		Debug:  config.Server.Debug,
 		Mailer: mailer,
 	})
