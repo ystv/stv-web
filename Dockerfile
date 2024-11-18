@@ -3,6 +3,9 @@ FROM golang:1.23.3-alpine3.20 AS build
 LABEL site="ystv-stv-web"
 LABEL stage="builder"
 
+ARG STV_WEB_VERSION_ARG
+ARG STV_WEB_COMMIT_ARG
+
 VOLUME /db
 VOLUME /toml
 
@@ -19,7 +22,14 @@ RUN apk add protoc-gen-go --repository https://dl-cdn.alpinelinux.org/alpine/edg
 
 COPY *.go ./
 
-RUN GOOS=linux GOARCH=amd64 make
+# Set build variables
+RUN echo -n "-X 'main.Version=$STV_WEB_VERSION_ARG" > ./ldflags && \
+    tr -d \\n < ./ldflags > ./temp && mv ./temp ./ldflags && \
+    echo -n "' -X 'main.Commit=$STV_WEB_COMMIT_ARG" >> ./ldflags && \
+    tr -d \\n < ./ldflags > ./temp && mv ./temp ./ldflags && \
+    echo -n "'" >> ./ldflags
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 make LDFLAGS="$(cat ./ldflags)"
 
 EXPOSE 6691
 
