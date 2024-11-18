@@ -15,6 +15,11 @@ import (
 	"github.com/ystv/stv_web/utils"
 )
 
+var (
+	Commit  = "unknown"
+	Version = "unknown"
+)
+
 func main() {
 	var tomlUsed, local, global bool
 	var err error
@@ -178,6 +183,8 @@ func main() {
 		Debug:  config.Server.Debug,
 		Mailer: mailer,
 	})
+
+	log.Printf("YSTV STV voting site: %s, commit: %s, version: %s\n", config.Server.Address, Commit, Version)
 
 	err = router1.Start()
 	if err != nil {
