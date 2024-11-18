@@ -70,7 +70,9 @@ func (r *AdminRepo) Admin(c echo.Context) error {
 			ErrInt     int
 			Total      int
 		}
-		Voters int
+		Voters  int
+		Commit  string
+		Version string
 	}{
 		Elections: struct {
 			ToBeOpened int
@@ -85,7 +87,9 @@ func (r *AdminRepo) Admin(c echo.Context) error {
 			ErrInt:     errInt,
 			Total:      total,
 		},
-		Voters: voters,
+		Voters:  voters,
+		Commit:  r.commit,
+		Version: r.version,
 	}
 	err = r.controller.Template.RenderTemplate(c.Response().Writer, data, templates.AdminTemplate)
 	if err != nil {
