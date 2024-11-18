@@ -12,7 +12,7 @@ PROTO_GENERATED=storage/storage.pb.go
 	$(PROTOC) -I=storage/ --go_opt=paths=source_relative --go_out=storage/ $<
 
 build: $(PROTO_GENERATED)
-	$(GO_BUILD) -o $(BINARY_NAME)
+	$(GO_BUILD) -ldflags="$(LDFLAGS)" -o $(BINARY_NAME)
 .PHONY: build
 
 clean:
