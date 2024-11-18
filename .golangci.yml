@@ -12,7 +12,7 @@ linters:
     - sql
   disable:
     - wrapcheck
-    - goerr113
+    - err113
     - depguard
     - tagalign
     - godot

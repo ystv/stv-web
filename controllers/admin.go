@@ -371,6 +371,7 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 		log.Println("Reconnected to mail server")
 	}
 
+	//nolint:gosec
 	election.Voters = uint64(len(voters) - len(election.GetExcluded()))
 
 	go r.sendEmailThread(voters, election)
@@ -505,10 +506,13 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 
 	for i, round := range electionResults.Rounds {
 		rounds := &storage.Round{}
+		//nolint:gosec
 		rounds.Round = uint64(i)
+		//nolint:gosec
 		rounds.Blanks = uint64(round.NumberOfBlankVotes)
 		for j, c := range round.CandidateResults {
 			candidateStatus := &storage.CandidateStatus{}
+			//nolint:gosec
 			candidateStatus.CandidateRank = uint64(j)
 			candidateStatus.Id = c.Candidate.Name
 			candidateStatus.NoOfVotes = c.NumberOfVotes
@@ -519,6 +523,7 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 	}
 	winners := electionResults.GetWinners()
 
+	//nolint:gosec
 	if uint64(len(winners)) != election.Seats {
 		return r.errorHandle(c, fmt.Errorf("invalid abount of winners"))
 	}

@@ -45,8 +45,10 @@ func SingleTransferableVote(candidates []*Candidate, ballots []*Ballot, numberOf
 
 	candidatesInRaceLoop:
 		for i, candidate := range candidatesInRace {
+			//nolint:gosec
 			j := uint64(i)
 			votesForCandidate := candidatesInRaceVotes[j]
+			//nolint:gosec
 			isLastCandidate := j == uint64(len(candidatesInRace)-1)
 
 			switch {
