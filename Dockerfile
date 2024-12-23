@@ -2,6 +2,7 @@ FROM golang:1.23.3-alpine3.20 AS build
 
 LABEL site="ystv-stv-web"
 LABEL stage="builder"
+LABEL author="Liam Burnand"
 
 ARG STV_WEB_VERSION_ARG
 ARG STV_WEB_COMMIT_ARG
