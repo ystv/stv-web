@@ -22,7 +22,7 @@ type ControllerInterface interface {
 	Trace()   // method = TRACE processing
 }
 
-// Controller is the base type of controllers in the 2016site architecture.
+// Controller is the base type of controllers.
 type Controller struct {
 	Template   *templates.Templater
 	DomainName string
