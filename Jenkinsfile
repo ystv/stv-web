@@ -19,7 +19,7 @@ pipeline {
         script {
           GIT_COMMIT_HASH = sh (script: "git log -n 1 --pretty=format:'%H'", returnStdout: true)
           docker.withRegistry('https://' + registryEndpoint, 'docker-registry') {
-            image = docker.build(imageName, "--build-arg COMP_SITE_VERSION_ARG=${env.BRANCH_NAME}-${env.BUILD_ID} --build-arg COMP_SITE_COMMIT_ARG=${GIT_COMMIT_HASH} .")
+            image = docker.build(imageName, "--build-arg STV_WEB_VERSION_ARG=${env.BRANCH_NAME}-${env.BUILD_ID} --build-arg STV_WEB_COMMIT_ARG=${GIT_COMMIT_HASH} .")
           }
         }
       }
