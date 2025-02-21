@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/google/uuid"
+	"golang.org/x/crypto/sha3"
 
 	"github.com/ystv/stv_web/storage"
 )
@@ -396,6 +397,11 @@ func (store *Store) GetURLsElectionID(id string) ([]*storage.URL, error) {
 }
 
 func (store *Store) FindURL(url string) (*storage.URL, error) {
+	h := sha3.New512()
+	h.Write([]byte(url))
+	fmt.Println(url)
+	url = fmt.Sprintf("%x", h.Sum(nil))
+	fmt.Println(url)
 	stv, err := store.Get()
 	if err != nil {
 		return nil, err
@@ -415,7 +421,13 @@ func (store *Store) AddURL(url *storage.URL) (*storage.URL, error) {
 	}
 
 beforeUUID:
-	url.Url = uuid.NewString()
+	urlUUID := uuid.NewString()
+	fmt.Println(url.GetVoter())
+	fmt.Println(urlUUID)
+	h := sha3.New512()
+	h.Write([]byte(urlUUID))
+	url.Url = fmt.Sprintf("%x", h.Sum(nil))
+	fmt.Println(url.GetUrl())
 
 	for _, u := range stv.GetUrls() {
 		if u.GetUrl() == url.GetUrl() {
@@ -438,10 +450,15 @@ beforeUUID:
 		return nil, err
 	}
 
+	url.Url = urlUUID
+
 	return url, nil
 }
 
 func (store *Store) SetURLVoted(url string) error {
+	h := sha3.New512()
+	h.Write([]byte(url))
+	url = fmt.Sprintf("%x", h.Sum(nil))
 	stv, err := store.backend.Read()
 	if err != nil {
 		return err
