@@ -4,6 +4,7 @@
     debug = false # boolean
     port = "" # e.g. ":80"
     domain_name = "" # domain name
+    encryption_key = "" # ballot encryption key
     force_reset_url_endpoint = "" # the url endpoint to forcefully reset all stored information
 
 [ad]

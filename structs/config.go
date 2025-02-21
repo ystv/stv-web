@@ -14,6 +14,7 @@ type (
 		Debug                 bool   `toml:"debug"`
 		Address               string `toml:"address"`
 		DomainName            string `toml:"domain_name"`
+		EncryptionKey         string `toml:"encryption_key"`
 		ForceResetURLEndpoint string `toml:"force_reset_url_endpoint"`
 		Commit                string
 		Version               string

@@ -175,7 +175,10 @@ func main() {
 		}
 	}
 
-	controller := controllers.GetController(config.Server.DomainName)
+	controller, err := controllers.GetController(config.Server.DomainName, []byte(config.Server.EncryptionKey))
+	if err != nil {
+		log.Fatal("Failed to create controller: ", err)
+	}
 
 	router1 := New(NewRouter{
 		Config: config,
