@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 
@@ -137,9 +138,19 @@ func (r *VoteRepo) AddVote(c echo.Context) error {
 		m[i] = c.Request().Form.Get("order~" + strconv.FormatUint(i, 10))
 	}
 
+	j, err := json.Marshal(m)
+	if err != nil {
+		return err
+	}
+
+	enc, err := r.controller.encrypt(j)
+	if err != nil {
+		return err
+	}
+
 	ballot := &storage.Ballot{
 		Election: u1.GetElection(),
-		Choice:   m,
+		Choice:   fmt.Sprintf("%0x", enc),
 	}
 
 	_, err = r.store.AddBallot(ballot)
