@@ -389,14 +389,17 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 
 func (r *AdminRepo) sendEmailThread(voters []*storage.Voter, election *storage.Election) {
 	for _, voter := range voters {
+		fmt.Println(1)
 		skip := false
 		for _, v := range election.GetExcluded() {
 			if voter.GetEmail() == v.GetEmail() {
 				skip = true
 			}
 		}
+		fmt.Println(2)
 
 		if !skip {
+			fmt.Println(3)
 			url := &storage.URL{
 				Election: election.GetId(),
 				Voter:    voter.GetEmail(),
@@ -407,6 +410,7 @@ func (r *AdminRepo) sendEmailThread(voters []*storage.Voter, election *storage.E
 			if err != nil {
 				fmt.Println(err)
 			}
+			fmt.Println(2, url.GetUrl())
 
 			file := utils.Mail{
 				Subject: "YSTV - Vote for (" + election.GetName() + ")",
@@ -438,6 +442,7 @@ func (r *AdminRepo) sendEmailThread(voters []*storage.Voter, election *storage.E
 					URL: "https://" + r.controller.DomainName + "/vote/" + url.GetUrl(),
 				},
 			}
+			fmt.Println(3, url.GetVoter())
 
 			err = r.mailer.SendMail(file)
 			if err != nil {
