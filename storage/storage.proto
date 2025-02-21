@@ -4,17 +4,23 @@ option go_package = "github.com/ystv/stv-web/storage";
 
 message STV {
     repeated Ballot ballots = 1;
-    repeated Candidate candidates = 2;
-    repeated Election elections = 3;
-    repeated URL urls = 4;
-    repeated Voter voters = 5;
-    bool allowRegistration = 6;
+    repeated BallotHash ballotsHash = 2;
+    repeated Candidate candidates = 3;
+    repeated Election elections = 4;
+    repeated URL urls = 5;
+    repeated Voter voters = 6;
+    bool allowRegistration = 7;
 }
 
 message Ballot {
     string id = 1;
     string election = 2;
-    map<uint64, string> choice = 3; // map[order, candidate id]
+    string choice = 3; // map[order, candidate id] which is encrypted with aes for more confidentiality
+}
+
+message BallotHash {
+    string ballot = 1;
+    string hash = 2;
 }
 
 message Candidate {
@@ -56,7 +62,7 @@ message CandidateStatus {
 }
 
 message URL {
-    string url = 1;
+    string url = 1; // URL is hashed to ensure that you can't just read the database to create a new ballot from a URL
     string election = 2;
     string voter = 3;
     bool voted = 4;
