@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -497,10 +498,23 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 	ballotsVoting := make([]*voting.Ballot, 0, len(ballots))
 	for _, ballot := range ballots {
 		var c2 []*voting.Candidate
-		for i := uint64(0); i < uint64(len(ballot.GetChoice())); i++ {
-			choice := ballot.GetChoice()[i]
+		var dec []byte
+		dec, err = r.controller.decrypt([]byte(ballot.GetChoice()))
+		if err != nil {
+			return r.errorHandle(c, err)
+		}
+		m := make(map[uint64]string)
+		err = json.Unmarshal(dec, &m)
+		if err != nil {
+			return r.errorHandle(c, err)
+		}
+		for _, v := range m {
+			fmt.Println(1)
+			fmt.Println(v)
 			for _, c3 := range candidates {
-				if c3.Name == choice {
+				fmt.Println(2)
+				fmt.Println(c3)
+				if c3.Name == v {
 					c2 = append(c2, c3)
 				}
 			}
