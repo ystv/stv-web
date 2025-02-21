@@ -1,6 +1,12 @@
 package controllers
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"encoding/base64"
+	"errors"
+	"io"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -11,27 +17,38 @@ import (
 
 // ControllerInterface is the interface to which controllers adhere.
 type ControllerInterface interface {
-	Get()     // method = GET processing
-	Post()    // method = POST processing
-	Delete()  // method = DELETE processing
-	Put()     // method = PUT handling
-	Head()    // method = HEAD processing
-	Patch()   // method = PATCH treatment
-	Options() // method = OPTIONS processing
-	Connect() // method = CONNECT processing
-	Trace()   // method = TRACE processing
+	Get(echo.Context) error     // method = GET processing
+	Post(echo.Context) error    // method = POST processing
+	Delete(echo.Context) error  // method = DELETE processing
+	Put(echo.Context) error     // method = PUT handling
+	Head(echo.Context) error    // method = HEAD processing
+	Patch(echo.Context) error   // method = PATCH treatment
+	Options(echo.Context) error // method = OPTIONS processing
+	Connect(echo.Context) error // method = CONNECT processing
+	Trace(echo.Context) error   // method = TRACE processing
+	encrypt([]byte) ([]byte, error)
+	decrypt([]byte) ([]byte, error)
 }
+
+var _ ControllerInterface = &Controller{}
 
 // Controller is the base type of controllers.
 type Controller struct {
-	Template   *templates.Templater
-	DomainName string
+	Template     *templates.Templater
+	DomainName   string
+	_cipherBlock cipher.Block
 }
 
-func GetController(domainName string) Controller {
-	return Controller{
-		DomainName: domainName,
+func GetController(domainName string, encryptionKey []byte) (Controller, error) {
+	block, err := aes.NewCipher(encryptionKey)
+	if err != nil {
+		return Controller{}, err
 	}
+
+	return Controller{
+		DomainName:   domainName,
+		_cipherBlock: block,
+	}, nil
 }
 
 // Get handles a HTTP GET request.
@@ -95,4 +112,31 @@ func (c *Controller) Connect(eC echo.Context) error {
 // Unless overridden, controllers refuse this method.
 func (c *Controller) Trace(eC echo.Context) error {
 	return eC.JSON(http.StatusMethodNotAllowed, utils.Error{Error: "Method Not Found"})
+}
+
+func (c *Controller) encrypt(text []byte) ([]byte, error) {
+	b := base64.StdEncoding.EncodeToString(text)
+	ciphertext := make([]byte, aes.BlockSize+len(b))
+	iv := ciphertext[:aes.BlockSize]
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return nil, err
+	}
+	cfb := cipher.NewCFBEncrypter(c._cipherBlock, iv)
+	cfb.XORKeyStream(ciphertext[aes.BlockSize:], []byte(b))
+	return ciphertext, nil
+}
+
+func (c *Controller) decrypt(text []byte) ([]byte, error) {
+	if len(text) < aes.BlockSize {
+		return nil, errors.New("ciphertext too short")
+	}
+	iv := text[:aes.BlockSize]
+	text = text[aes.BlockSize:]
+	cfb := cipher.NewCFBDecrypter(c._cipherBlock, iv)
+	cfb.XORKeyStream(text, text)
+	data, err := base64.StdEncoding.DecodeString(string(text))
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }
