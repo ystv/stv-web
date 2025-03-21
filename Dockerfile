@@ -7,6 +7,11 @@ LABEL author="Liam Burnand"
 ARG STV_WEB_VERSION_ARG
 ARG STV_WEB_COMMIT_ARG
 
+# Download certificates
+RUN apk update && apk upgrade && \
+    apk add --no-cache ca-certificates tzdata && \
+    update-ca-certificates
+
 VOLUME /db
 VOLUME /toml
 

@@ -12,6 +12,7 @@ require (
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/stretchr/testify v1.10.0
 	github.com/xhit/go-simple-mail/v2 v2.16.0
+	golang.org/x/crypto/x509roots/fallback v0.0.0-20250317152234-d0a798f77473
 	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394
 	google.golang.org/protobuf v1.36.5
 )
