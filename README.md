@@ -1,7 +1,7 @@
 # stv-web
 Single Transferable Vote web application
 
-An email sending, AD authed, very much over-engineered STV system that Liam made because he could!
+An email sending, AD authed, very much overengineered STV system that Liam made because he could!
 
 All public and template files are included in the executable/container so no need for copying files over.
 
