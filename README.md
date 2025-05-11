@@ -15,5 +15,5 @@ e.g. `GOOS=linux GOARCH=amd64 make`, change the GOOS and GOARCH as needed for yo
 For docker there is a docker file so use this command to make the container 
 `docker run -p 6691:6691 --name ystv-stv-web -v <location of db folder>:/db -v <location of toml folder>:/toml --restart=always ystv-stv-web:latest`
 
-The DB folder can be left empty as there will be a db file created  
-for the TOML folder then use the example config.toml for reference.
+The DB folder can be left empty as there will be a db file created.
+For the TOML folder, then use the example config.toml for reference.
