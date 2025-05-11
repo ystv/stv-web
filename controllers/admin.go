@@ -266,7 +266,7 @@ func (r *AdminRepo) AddElection(c echo.Context) error {
 	description := c.FormValue("description")
 	tempRon := c.FormValue("ron")
 	tempSeats := c.FormValue("seats")
-	ron := false
+	var ron bool
 	if len(tempRon) > 0 {
 		ron = true
 	}
@@ -305,7 +305,7 @@ func (r *AdminRepo) EditElection(c echo.Context) error {
 	description := c.FormValue("description")
 	tempRon := c.FormValue("ron")
 	tempSeats := c.FormValue("seats")
-	ron := false
+	var ron bool
 	if len(tempRon) > 0 {
 		ron = true
 	}
