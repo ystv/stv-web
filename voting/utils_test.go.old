@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TODO: Liam needs to fix
+
 func ParseBLT(tb testing.TB, file string) ([]*Candidate, []*Ballot, uint64) {
 	tb.Helper()
 
