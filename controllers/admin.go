@@ -717,6 +717,16 @@ func (r *AdminRepo) ForceReset(c echo.Context) error {
 		return r.errorHandle(c, err)
 	}
 
+	err = r.store.DeleteAllURLs()
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+
+	err = r.store.DeleteAllCandidates()
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+
 	_, err = r.store.SetAllowRegistration(false)
 	if err != nil {
 		return r.errorHandle(c, err)

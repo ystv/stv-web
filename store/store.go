@@ -110,6 +110,17 @@ func (store *Store) DeleteBallot(id string) error {
 	return fmt.Errorf("ballot not found for DeleteBallot")
 }
 
+func (store *Store) DeleteAllBallots() error {
+	stv, err := store.backend.Read()
+	if err != nil {
+		return err
+	}
+
+	stv.Ballots = []*storage.Ballot{}
+
+	return store.backend.Write(stv)
+}
+
 func (store *Store) GetCandidatesElectionID(id string) ([]*storage.Candidate, error) {
 	stv, err := store.Get()
 	if err != nil {
@@ -186,6 +197,17 @@ func (store *Store) DeleteCandidate(id string) error {
 		return store.backend.Write(stv)
 	}
 	return fmt.Errorf("candidate not found for DeleteCandidate")
+}
+
+func (store *Store) DeleteAllCandidates() error {
+	stv, err := store.backend.Read()
+	if err != nil {
+		return err
+	}
+
+	stv.Candidates = []*storage.Candidate{}
+
+	return store.backend.Write(stv)
 }
 
 func (store *Store) GetElections() ([]*storage.Election, error) {
@@ -483,6 +505,17 @@ func (store *Store) DeleteURL(url string) error {
 		return store.backend.Write(stv)
 	}
 	return fmt.Errorf("url not found for DeleteURL")
+}
+
+func (store *Store) DeleteAllURLs() error {
+	stv, err := store.backend.Read()
+	if err != nil {
+		return err
+	}
+
+	stv.Urls = []*storage.URL{}
+
+	return store.backend.Write(stv)
 }
 
 func (store *Store) GetAllowRegistration() (bool, error) {
