@@ -7,12 +7,12 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v4"
-	"github.com/ystv/stv_web/mail"
+	"github.com/ystv/stv-web/mail"
 
-	"github.com/ystv/stv_web/storage"
-	"github.com/ystv/stv_web/store"
-	"github.com/ystv/stv_web/templates"
-	"github.com/ystv/stv_web/voting"
+	"github.com/ystv/stv-web/storage"
+	"github.com/ystv/stv-web/store"
+	"github.com/ystv/stv-web/templates"
+	"github.com/ystv/stv-web/voting"
 )
 
 type AdminRepo struct {

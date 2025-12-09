@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"github.com/ystv/stv_web/mail"
-	"github.com/ystv/stv_web/store"
+	"github.com/ystv/stv-web/mail"
+	"github.com/ystv/stv-web/store"
 )
 
 type Repos struct {

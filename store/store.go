@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/ystv/stv_web/storage"
+	"github.com/ystv/stv-web/storage"
 )
 
 type Store struct {

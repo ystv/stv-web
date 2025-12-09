@@ -1,4 +1,4 @@
-module github.com/ystv/stv_web
+module github.com/ystv/stv-web
 
 go 1.25.5
 

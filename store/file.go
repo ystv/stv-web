@@ -9,7 +9,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/ystv/stv_web/storage"
+	"github.com/ystv/stv-web/storage"
 )
 
 // FileBackend Applications: apps, Prefix: prefix

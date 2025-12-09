@@ -6,7 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/ystv/stv_web/templates"
+	"github.com/ystv/stv-web/templates"
 )
 
 type ErrorRepo struct {

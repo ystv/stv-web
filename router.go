@@ -13,10 +13,10 @@ import (
 	"github.com/labstack/echo/v4"
 	middleware2 "github.com/labstack/echo/v4/middleware"
 
-	"github.com/ystv/stv_web/controllers"
-	utilMail "github.com/ystv/stv_web/mail"
-	"github.com/ystv/stv_web/middleware"
-	"github.com/ystv/stv_web/structs"
+	"github.com/ystv/stv-web/controllers"
+	utilMail "github.com/ystv/stv-web/mail"
+	"github.com/ystv/stv-web/middleware"
+	"github.com/ystv/stv-web/structs"
 )
 
 //go:embed public/*
