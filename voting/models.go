@@ -1,8 +1,7 @@
 package voting
 
 import (
-	//nolint:gosec
-	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"strings"
@@ -21,8 +20,7 @@ func (c *Candidate) String() string {
 }
 
 func (c *Candidate) Hash() string {
-	//nolint:gosec
-	hasher := sha1.New()
+	hasher := sha256.New()
 	hasher.Write([]byte(c.Name))
 	return hex.EncodeToString(hasher.Sum(nil))
 }

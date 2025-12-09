@@ -379,8 +379,11 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 		log.Println("Reconnected to mail server")
 	}
 
-	//nolint:gosec
-	election.Voters = uint64(len(voters) - len(election.GetExcluded()))
+	votersParsed, err := strconv.ParseUint(strconv.Itoa(len(voters)-len(election.GetExcluded())), 10, 64)
+	if err != nil {
+		return r.errorHandle(c, fmt.Errorf("failed to parse uint voters: %w", err))
+	}
+	election.Voters = votersParsed
 
 	go r.sendEmailThread(voters, election)
 
@@ -514,24 +517,30 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 
 	for i, round := range electionResults.Rounds {
 		rounds := &storage.Round{}
-		//nolint:gosec
-		rounds.Round = uint64(i)
-		//nolint:gosec
+		var roundParsed uint64
+		roundParsed, err = strconv.ParseUint(strconv.Itoa(i), 10, 64)
+		if err != nil {
+			return r.errorHandle(c, fmt.Errorf("failed to parse uint round: %w", err))
+		}
+		rounds.Round = roundParsed
 		rounds.Blanks = uint64(round.NumberOfBlankVotes)
-		for j, c := range round.CandidateResults {
+		for j, can := range round.CandidateResults {
 			candidateStatus := &storage.CandidateStatus{}
-			//nolint:gosec
-			candidateStatus.CandidateRank = uint64(j)
-			candidateStatus.Id = c.Candidate.Name
-			candidateStatus.NoOfVotes = c.NumberOfVotes
-			candidateStatus.Status = string(c.Status)
+			var candidateRankParsed uint64
+			candidateRankParsed, err = strconv.ParseUint(strconv.Itoa(j), 10, 64)
+			if err != nil {
+				return r.errorHandle(c, fmt.Errorf("failed to parse uint candidate rank: %w", err))
+			}
+			candidateStatus.CandidateRank = candidateRankParsed
+			candidateStatus.Id = can.Candidate.Name
+			candidateStatus.NoOfVotes = can.NumberOfVotes
+			candidateStatus.Status = string(can.Status)
 			rounds.CandidateStatus = append(rounds.GetCandidateStatus(), candidateStatus)
 		}
 		result.Round = append(result.GetRound(), rounds)
 	}
 	winners := electionResults.GetWinners()
 
-	//nolint:gosec
 	if uint64(len(winners)) != election.Seats {
 		return r.errorHandle(c, fmt.Errorf("invalid abount of winners"))
 	}

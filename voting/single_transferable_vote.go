@@ -1,6 +1,9 @@
 package voting
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 type SingleTransferableVoteOptions struct {
 	CompareMethodIfEquals CompareMethod
@@ -45,11 +48,16 @@ func SingleTransferableVote(candidates []*Candidate, ballots []*Ballot, numberOf
 
 	candidatesInRaceLoop:
 		for i, candidate := range candidatesInRace {
-			//nolint:gosec
-			j := uint64(i)
+			j, err := strconv.ParseUint(strconv.Itoa(i), 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse uint candidate in race: %w", err)
+			}
 			votesForCandidate := candidatesInRaceVotes[j]
-			//nolint:gosec
-			isLastCandidate := j == uint64(len(candidatesInRace)-1)
+			candidateCount, err := strconv.ParseUint(strconv.Itoa(len(candidatesInRace)-1), 10, 64)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse uint last candidate in race: %w", err)
+			}
+			isLastCandidate := j == candidateCount
 
 			switch {
 			case votesForCandidate-roundingError >= votesNeededToWin:

@@ -1,11 +1,11 @@
 package voting
 
 import (
+	"crypto/rand"
 	"fmt"
 	"math"
-	"math/rand"
+	"math/big"
 	"sort"
-	"time"
 
 	"github.com/bndr/gotabulate"
 )
@@ -136,9 +136,6 @@ func DefaultElectionManagerOptions() ElectionManagerOptions {
 }
 
 func NewElectionManager(candidates []*Candidate, ballots []*Ballot, options ElectionManagerOptions) *ElectionManager {
-	//nolint:gosec
-	rand1 := rand.New(rand.NewSource(time.Now().Unix()))
-
 	candidateVoteCounts := make(map[*Candidate]*CandidateVoteCount)
 	for _, candidate := range candidates {
 		candidateVoteCounts[candidate] = NewCandidateVoteCount(candidate)
@@ -159,7 +156,11 @@ func NewElectionManager(candidates []*Candidate, ballots []*Ballot, options Elec
 		if numberOfBlankVotes > 0 {
 			if options.PickRandomIfBlank {
 				for i := 0; i < numberOfBlankVotes; i++ {
-					newCandidateChoice := candidates[rand1.Intn(len(candidates))]
+					nBig, err := rand.Int(rand.Reader, big.NewInt(int64(len(candidates))))
+					if err != nil {
+						panic(err)
+					}
+					newCandidateChoice := candidates[int(nBig.Int64())]
 					candidatesThatShouldBeVotedOn = append(candidatesThatShouldBeVotedOn, newCandidateChoice)
 				}
 			} else {
@@ -207,8 +208,11 @@ func (em *ElectionManager) SortCandidatesInRace() {
 		}
 		// Random method by default if not second choice
 		// requires to be input of 2 as it doesn't include upper bound
-		//nolint:gosec
-		return rand.Intn(2) == 0
+		nBig, err := rand.Int(rand.Reader, big.NewInt(int64(2)))
+		if err != nil {
+			panic(err)
+		}
+		return nBig.Int64() == 0
 	})
 }
 
@@ -281,8 +285,11 @@ func (em *ElectionManager) TransferVotes(candidate *Candidate, numberOfTransferV
 		if newCandidateChoice == nil && em.PickRandomIfBlank {
 			candidatesInRace := em.GetCandidatesInRace()
 			if len(candidatesInRace) > 0 {
-				//nolint:gosec
-				newCandidateChoice = candidatesInRace[rand.Intn(len(candidatesInRace))]
+				nBig, err := rand.Int(rand.Reader, big.NewInt(int64(len(candidatesInRace))))
+				if err != nil {
+					return fmt.Errorf("failed to generate random new candidate choice: %w", err)
+				}
+				newCandidateChoice = candidatesInRace[int(nBig.Int64())]
 			}
 		}
 
@@ -385,8 +392,11 @@ func (em *ElectionManager) GetResults() *RoundResult {
 func (em *ElectionManager) Candidate1HasMostSecondChoices(c1vc, c2vc *CandidateVoteCount, x int) bool {
 	if x >= em.NumberOfCandidates {
 		// requires to be input of 2 as it doesn't include upper bound
-		//nolint:gosec
-		return rand.Intn(2) == 1
+		nBig, err := rand.Int(rand.Reader, big.NewInt(int64(2)))
+		if err != nil {
+			panic(err)
+		}
+		return nBig.Uint64() == 1
 	}
 
 	votesCandidate1 := 0
