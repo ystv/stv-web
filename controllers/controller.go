@@ -5,7 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/ystv/stv_web/errors"
+	"github.com/ystv/stv_web/errorsutil"
 	"github.com/ystv/stv_web/templates"
 )
 
@@ -38,61 +38,61 @@ func GetController(domainName string) Controller {
 //
 // Unless overridden, controllers refuse this method.
 func (c *Controller) Get(eC echo.Context) error {
-	return eC.JSON(http.StatusMethodNotAllowed, errors.Error{Error: "Method Not Found"})
+	return eC.JSON(http.StatusMethodNotAllowed, errorsutil.Error{Error: "Method Not Found"})
 }
 
 // Post handles a HTTP POST request.
 //
 // Unless overridden, controllers refuse this method.
 func (c *Controller) Post(eC echo.Context) error {
-	return eC.JSON(http.StatusMethodNotAllowed, errors.Error{Error: "Method Not Found"})
+	return eC.JSON(http.StatusMethodNotAllowed, errorsutil.Error{Error: "Method Not Found"})
 }
 
 // Delete handles a HTTP DELETE request.
 //
 // Unless overridden, controllers refuse this method.
 func (c *Controller) Delete(eC echo.Context) error {
-	return eC.JSON(http.StatusMethodNotAllowed, errors.Error{Error: "Method Not Found"})
+	return eC.JSON(http.StatusMethodNotAllowed, errorsutil.Error{Error: "Method Not Found"})
 }
 
 // Put handles a HTTP PUT request.
 //
 // Unless overridden, controllers refuse this method.
 func (c *Controller) Put(eC echo.Context) error {
-	return eC.JSON(http.StatusMethodNotAllowed, errors.Error{Error: "Method Not Found"})
+	return eC.JSON(http.StatusMethodNotAllowed, errorsutil.Error{Error: "Method Not Found"})
 }
 
 // Head handles a HTTP HEAD request.
 //
 // Unless overridden, controllers refuse this method.
 func (c *Controller) Head(eC echo.Context) error {
-	return eC.JSON(http.StatusMethodNotAllowed, errors.Error{Error: "Method Not Found"})
+	return eC.JSON(http.StatusMethodNotAllowed, errorsutil.Error{Error: "Method Not Found"})
 }
 
 // Patch handles a HTTP PATCH request.
 //
 // Unless overridden, controllers refuse this method.
 func (c *Controller) Patch(eC echo.Context) error {
-	return eC.JSON(http.StatusMethodNotAllowed, errors.Error{Error: "Method Not Found"})
+	return eC.JSON(http.StatusMethodNotAllowed, errorsutil.Error{Error: "Method Not Found"})
 }
 
 // Options handles a HTTP OPTIONS request.
 //
 // Unless overridden, controllers refuse this method.
 func (c *Controller) Options(eC echo.Context) error {
-	return eC.JSON(http.StatusMethodNotAllowed, errors.Error{Error: "Method Not Found"})
+	return eC.JSON(http.StatusMethodNotAllowed, errorsutil.Error{Error: "Method Not Found"})
 }
 
 // Connect handles a HTTP CONNECT request.
 //
 // Unless overridden, controllers refuse this method.
 func (c *Controller) Connect(eC echo.Context) error {
-	return eC.JSON(http.StatusMethodNotAllowed, errors.Error{Error: "Method Not Found"})
+	return eC.JSON(http.StatusMethodNotAllowed, errorsutil.Error{Error: "Method Not Found"})
 }
 
 // Trace handles a HTTP TRACE request.
 //
 // Unless overridden, controllers refuse this method.
 func (c *Controller) Trace(eC echo.Context) error {
-	return eC.JSON(http.StatusMethodNotAllowed, errors.Error{Error: "Method Not Found"})
+	return eC.JSON(http.StatusMethodNotAllowed, errorsutil.Error{Error: "Method Not Found"})
 }
