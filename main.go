@@ -11,9 +11,9 @@ import (
 	_ "golang.org/x/crypto/x509roots/fallback" // CA bundle for FROM Scratch
 
 	"github.com/ystv/stv_web/controllers"
+	"github.com/ystv/stv_web/mail"
 	"github.com/ystv/stv_web/store"
 	"github.com/ystv/stv_web/structs"
-	"github.com/ystv/stv_web/utils"
 )
 
 var (
@@ -130,17 +130,17 @@ func main() {
 		fmt.Println()
 	}
 
-	var mailer *utils.Mailer
-	var mailConfig utils.MailConfig
+	var mailer *mail.Mailer
+	var mailConfig mail.Config
 	if config.Mail.Host != "" {
-		mailConfig = utils.MailConfig{
+		mailConfig = mail.Config{
 			Host:     config.Mail.Host,
 			Port:     config.Mail.Port,
 			Username: config.Mail.User,
 			Password: config.Mail.Password,
 		}
 
-		mailer, err = utils.NewMailer(mailConfig)
+		mailer, err = mail.NewMailer(mailConfig)
 		if err != nil {
 			log.Printf("failed to connect to mail server: %+v", err)
 		} else {
@@ -148,7 +148,7 @@ func main() {
 
 			mailer.KeepAlive = true
 
-			mailer.Defaults = utils.Defaults{
+			mailer.Defaults = mail.Defaults{
 				DefaultTo:   config.Mail.DefaultTo,
 				DefaultFrom: "YSTV STV <stv@ystv.co.uk>",
 			}

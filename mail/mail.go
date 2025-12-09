@@ -1,4 +1,4 @@
-package utils
+package mail
 
 import (
 	"bytes"
@@ -25,8 +25,8 @@ type (
 		DefaultFrom string
 	}
 
-	// MailConfig represents a configuration to connect to an SMTP server
-	MailConfig struct {
+	// Config represents a configuration to connect to an SMTP server
+	Config struct {
 		Host     string
 		Port     int
 		Username string
@@ -48,7 +48,7 @@ type (
 )
 
 // NewMailer creates a new SMTP client
-func NewMailer(config MailConfig) (*Mailer, error) {
+func NewMailer(config Config) (*Mailer, error) {
 	smtpServer := mail.SMTPServer{
 		Host:           config.Host,
 		Port:           config.Port,

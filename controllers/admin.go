@@ -7,24 +7,24 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v4"
+	"github.com/ystv/stv_web/mail"
 
 	"github.com/ystv/stv_web/storage"
 	"github.com/ystv/stv_web/store"
 	"github.com/ystv/stv_web/templates"
-	"github.com/ystv/stv_web/utils"
 	"github.com/ystv/stv_web/voting"
 )
 
 type AdminRepo struct {
 	controller Controller
-	mailer     *utils.Mailer
+	mailer     *mail.Mailer
 	store      *store.Store
-	mailConfig utils.MailConfig
+	mailConfig mail.Config
 	commit     string
 	version    string
 }
 
-func NewAdminRepo(controller Controller, mailer *utils.Mailer, store *store.Store, mailConfig utils.MailConfig, commit, version string) *AdminRepo {
+func NewAdminRepo(controller Controller, mailer *mail.Mailer, store *store.Store, mailConfig mail.Config, commit, version string) *AdminRepo {
 	return &AdminRepo{
 		controller: controller,
 		mailer:     mailer,
@@ -372,7 +372,7 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 		return r.errorHandle(c, fmt.Errorf("failed to get voters: %w", err))
 	}
 
-	r.mailer, err = utils.NewMailer(r.mailConfig)
+	r.mailer, err = mail.NewMailer(r.mailConfig)
 	if err != nil {
 		log.Printf("failed to reconnect to mail server: %+v", err)
 	} else {
@@ -408,7 +408,7 @@ func (r *AdminRepo) sendEmailThread(voters []*storage.Voter, election *storage.E
 				fmt.Println(err)
 			}
 
-			file := utils.Mail{
+			file := mail.Mail{
 				Subject: "YSTV - Vote for (" + election.GetName() + ")",
 				Tpl:     r.controller.Template.RenderEmail(templates.EmailTemplate),
 				To:      voter.GetEmail(),

@@ -1,8 +1,8 @@
 package controllers
 
 import (
+	"github.com/ystv/stv_web/mail"
 	"github.com/ystv/stv_web/store"
-	"github.com/ystv/stv_web/utils"
 )
 
 type Repos struct {
@@ -13,7 +13,7 @@ type Repos struct {
 	Vote         *VoteRepo
 }
 
-func NewRepos(controller Controller, mailer *utils.Mailer, store *store.Store, mailConfig utils.MailConfig, commit, version string) *Repos {
+func NewRepos(controller Controller, mailer *mail.Mailer, store *store.Store, mailConfig mail.Config, commit, version string) *Repos {
 	return &Repos{
 		Admin:        NewAdminRepo(controller, mailer, store, mailConfig, commit, version),
 		Error:        NewErrorRepo(controller),

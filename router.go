@@ -14,9 +14,9 @@ import (
 	middleware2 "github.com/labstack/echo/v4/middleware"
 
 	"github.com/ystv/stv_web/controllers"
+	utilMail "github.com/ystv/stv_web/mail"
 	"github.com/ystv/stv_web/middleware"
 	"github.com/ystv/stv_web/structs"
-	"github.com/ystv/stv_web/utils"
 )
 
 //go:embed public/*
@@ -27,13 +27,13 @@ type (
 		config structs.Config
 		repos  *controllers.Repos
 		router *echo.Echo
-		mailer *utils.Mailer
+		mailer *utilMail.Mailer
 	}
 	NewRouter struct {
 		Config structs.Config
 		Repos  *controllers.Repos
 		Debug  bool
-		Mailer *utils.Mailer
+		Mailer *utilMail.Mailer
 	}
 )
 
