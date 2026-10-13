@@ -1,4 +1,4 @@
-module github.com/nouse/stv-web
+module github.com/ystv/stv-web
 
 go 1.27.2
 
