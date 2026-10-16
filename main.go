@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"log"
 	"os"
@@ -163,10 +164,8 @@ func main() {
 
 	controller := controllers.GetController(config.Server.DomainName)
 
-	/// TODO: make random on version?
-	auth_key := []byte("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijkl")
-	// rand.Read(auth_key[:])
-	cookie_store := sessions.NewCookieStore(auth_key)
+	auth_key := sha256.Sum256([]byte(Version + Commit))
+	cookie_store := sessions.NewCookieStore(auth_key[:])
 
 	router1 := New(NewRouter{
 		Config: config,

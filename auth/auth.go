@@ -103,8 +103,6 @@ func AuthMw(kc structs.Keycloak) echo.MiddlewareFunc {
 				return oidcRedirect(c, kc)
 			}
 
-			// auth_conf, err := OidcConf(kc, c.Request().Context())
-
 			split_url := strings.Split(strings.Trim(c.Request().URL.Path, "/"), "/")
 			if split_url[0] == "admin" {
 				token := profile.Token.MakeToken()
