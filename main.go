@@ -1,12 +1,14 @@
 package main
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
 
 	"github.com/BurntSushi/toml"
+	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 	_ "golang.org/x/crypto/x509roots/fallback" // CA bundle for FROM Scratch
 
@@ -75,18 +77,6 @@ func main() {
 			debug = false
 		}
 
-		var adPort int
-		adPort, err = strconv.Atoi(os.Getenv("STV_AD_PORT"))
-		if err != nil {
-			log.Fatalf("failed to get ad port env: %+v", err)
-		}
-
-		var adSecurity int
-		adSecurity, err = strconv.Atoi(os.Getenv("STV_AD_SECURITY"))
-		if err != nil {
-			log.Fatalf("failed to get ad security env: %+v", err)
-		}
-
 		var mailPort int
 		mailPort, err = strconv.Atoi(os.Getenv("STV_MAIL_PORT"))
 		if err != nil {
@@ -99,18 +89,14 @@ func main() {
 					Debug:      debug,
 					Address:    os.Getenv("STV_ADDRESS"),
 					DomainName: os.Getenv("STV_DOMAIN_NAME"),
+					Port:       os.Getenv("STV_PORT"),
 				},
-				AD: structs.AD{
-					BypassUsername: os.Getenv("STV_AD_BYPASS_USERNAME"),
-					BypassPassword: os.Getenv("STV_AD_BYPASS_PASSWORD"),
-					Server:         os.Getenv("STV_AD_SERVER"),
-					Port:           adPort,
-					BaseDN:         os.Getenv("STV_AD_BASE_DN"),
-					Security:       adSecurity,
-					Bind: structs.ADBind{
-						Username: os.Getenv("STV_AD_BIND_USERNAME"),
-						Password: os.Getenv("STV_AD_BIND_PASSWORD"),
-					},
+				Keycloak: structs.Keycloak{
+					URL:         os.Getenv("STV_KEYCLOAK_URL"),
+					Realm:       os.Getenv("STV_KEYCLOAK_REAL"),
+					ClientID:    os.Getenv("STV_KEYCLOAK_CLIENTID"),
+					Secret:      os.Getenv("STV_KEYCLOAK_SECRET"),
+					RedirectURL: os.Getenv("STV_KEYCLOAK_REDIRECTURL"),
 				},
 				Mail: structs.Mail{
 					Host:      os.Getenv("STV_MAIL_HOST"),
@@ -178,14 +164,18 @@ func main() {
 
 	controller := controllers.GetController(config.Server.DomainName)
 
+	auth_key := sha256.Sum256([]byte(Version + Commit))
+	cookie_store := sessions.NewCookieStore(auth_key[:])
+
 	router1 := New(NewRouter{
 		Config: config,
 		Repos:  controllers.NewRepos(controller, mailer, newStore, mailConfig, Commit, Version),
 		Debug:  config.Server.Debug,
 		Mailer: mailer,
+		Cookie: cookie_store,
 	})
 
-	log.Printf("YSTV STV voting site: %s, commit: %s, version: %s\n", config.Server.Address, Commit, Version)
+	log.Printf("YSTV STV voting site: %s, commit: %s, version: %s\n", config.Server.Address+":"+config.Server.Port, Commit, Version)
 
 	err = router1.Start()
 	if err != nil {
