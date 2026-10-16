@@ -11,7 +11,7 @@
     keycloak_url 		    = "https://account.ystv.co.uk/"
     keycloak_realm 		    = "ystv"
     keycloak_clientID		= "stv-web"
-    keycloak_secret 		= "tlhIpwvvaWOEHlbaOUt6lmT7KaRClNAV"
+    keycloak_clientsecret   = "tlhIpwvvaWOEHlbaOUt6lmT7KaRClNAV"
     keycloak_redirectURL	= "http://localhost:8080/oauth/callback"
 
 [mail]

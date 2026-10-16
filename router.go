@@ -28,14 +28,14 @@ type (
 		repos  *controllers.Repos
 		router *echo.Echo
 		mailer *utilMail.Mailer
-		cookie *sessions.CookieStore
+		cookie sessions.Store
 	}
 	NewRouter struct {
 		Config structs.Config
 		Repos  *controllers.Repos
 		Debug  bool
 		Mailer *utilMail.Mailer
-		Cookie *sessions.CookieStore
+		Cookie sessions.Store
 	}
 )
 

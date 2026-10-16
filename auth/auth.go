@@ -3,11 +3,16 @@ package auth
 import (
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"strings"
+	"time"
 
 	"github.com/coreos/go-oidc"
 	"github.com/labstack/echo/v4"
@@ -19,14 +24,19 @@ import (
 const COOKIE string = "session"
 const PKCE_COOKIE string = "pkce"
 const STATE string = "state"
-const UMA_GRANT_TYPE string = "grant_type=urn:ietf:params:oauth:grant-type:uma-ticket"
+const UMA_GRANT_TYPE string = "urn:ietf:params:oauth:grant-type:uma-ticket"
 const PERMISSION string = "stv-admin#stv-admin"
 
 type (
+	LiteToken struct {
+		Access  string
+		Refresh string
+		Expiry  time.Time
+	}
 	Profile struct {
-		Client *http.Client
-		Name   string
-		Email  string
+		Token LiteToken
+		Name  string
+		Email string
 	}
 	AuthConf struct {
 		Provider oidc.Provider
@@ -35,22 +45,57 @@ type (
 	}
 )
 
-var Auth *AuthConf = nil
+func (l *LiteToken) MakeToken() oauth2.Token {
+	return oauth2.Token{
+		AccessToken:  l.Access,
+		TokenType:    "Bearer",
+		RefreshToken: l.Refresh,
+		Expiry:       l.Expiry,
+		ExpiresIn:    0,
+	}
+}
+
+func MakeLiteToken(t *oauth2.Token) LiteToken {
+	return LiteToken{
+		Access:  t.AccessToken,
+		Refresh: t.RefreshToken,
+		Expiry:  t.Expiry,
+	}
+}
+
+var store = map[[32]byte]Profile{}
+
+func (p *Profile) Hash() [32]byte {
+	return sha256.Sum256([]byte(p.Name + p.Email + p.Token.Access + p.Token.Refresh))
+}
+
+func GetProfile(c echo.Context) (*Profile, error) {
+	session, err := cookie.GetSession(c, COOKIE)
+	if err != nil {
+		return nil, err
+	}
+	hash, ok := session.Values["profile"].([32]byte)
+	profile, ok := store[hash]
+	if !ok {
+		return nil, errors.New("profile asked for but does not exist!")
+	}
+	return &profile, nil
+}
 
 func AuthMw(kc structs.Keycloak) echo.MiddlewareFunc {
+	gob.Register([32]byte{})
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			if strings.Trim(c.Request().URL.Path, "/") == "oath/callback" {
+			if c.Request().URL.Path == "/oauth/callback" {
 				// if oauth callback, we're making a cookie so ignore this for now
 				return next(c)
 			}
 			session, err := cookie.GetSession(c, COOKIE)
-			if err != nil {
+			if err != nil && session == nil {
 				return err
 			}
-
-			profile, ok := session.Values["profile"].(Profile)
-
+			hash, ok := session.Values["profile"].([32]byte)
+			profile, ok := store[hash]
 			if session.IsNew || !ok {
 				if err = session.Save(c.Request(), c.Response()); err != nil {
 					return err
@@ -58,10 +103,13 @@ func AuthMw(kc structs.Keycloak) echo.MiddlewareFunc {
 				return oidcRedirect(c, kc)
 			}
 
+			// auth_conf, err := OidcConf(kc, c.Request().Context())
+
 			split_url := strings.Split(strings.Trim(c.Request().URL.Path, "/"), "/")
 			if split_url[0] == "admin" {
+				token := profile.Token.MakeToken()
 				permission, err := umaPermissionReq(
-					profile.Client,
+					token,
 					[]string{"stv-admin#stv-admin"},
 					kc,
 					c.Request().Context(),
@@ -78,39 +126,38 @@ func AuthMw(kc structs.Keycloak) echo.MiddlewareFunc {
 	}
 }
 
-func umaPermissionReq(client *http.Client, permissions []string, kc structs.Keycloak, ctx context.Context) (bool, error) {
-	uri := fmt.Sprintf("%s/realms/%s/protocol/openid-connect/token", strings.TrimSuffix(kc.URL, "/"), strings.Trim(kc.Realm, "/"))
-	permissions_urlenc := []string{}
+func umaPermissionReq(token oauth2.Token, permissions []string, kc structs.Keycloak, ctx context.Context) (bool, error) {
+	conf, err := OidcConf(kc, ctx)
+	if err != nil {
+		return false, err
+	}
 
+	uri := conf.Provider.Endpoint().TokenURL
+	form := url.Values{}
+	form.Set("grant_type", UMA_GRANT_TYPE)
+	form.Set("audience", kc.ClientID)
+	form.Set("response_mode", "decision")
 	for _, permission := range permissions {
-		permissions_urlenc = append(
-			permissions_urlenc,
-			fmt.Sprintf("permission=%s", permission),
-		)
+		form.Add("permission", permission)
 	}
-	preamble := []string{
-		UMA_GRANT_TYPE,
-		fmt.Sprintf("audience=%s", kc.ClientID),
-		"response_mode=decision",
+
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, uri, strings.NewReader(form.Encode()))
+	if err != nil {
+		return false, err
 	}
-	body := strings.Join(
-		append(
-			preamble,
-			permissions_urlenc...,
-		),
-		"&",
-	)
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, uri, strings.NewReader(body))
+	request.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	request.Header.Add("Authorization", "Bearer "+token.AccessToken)
+
+	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		return false, err
 	}
 
-	response, err := client.Do(request)
-	if err != nil {
-		return false, err
-	}
-	if string(response.Status[0]) != "2" {
-		return false, errors.New(response.Status)
+	defer response.Body.Close()
+
+	if response.StatusCode < 200 || response.StatusCode > 299 {
+		body, _ := io.ReadAll(response.Body)
+		return false, fmt.Errorf("%s: %s", response.Status, body)
 	}
 
 	decoder := json.NewDecoder(response.Body)
@@ -127,10 +174,6 @@ func umaPermissionReq(client *http.Client, permissions []string, kc structs.Keyc
 }
 
 func OidcConf(kc structs.Keycloak, c context.Context) (*AuthConf, error) {
-	if Auth != nil {
-		return Auth, nil
-	}
-
 	url := fmt.Sprintf("%s/realms/%s", strings.TrimSuffix(kc.URL, "/"), strings.Trim(kc.Realm, "/"))
 	provider, err := oidc.NewProvider(
 		c,
@@ -151,13 +194,11 @@ func OidcConf(kc structs.Keycloak, c context.Context) (*AuthConf, error) {
 		&oidc.Config{ClientID: kc.ClientID},
 	)
 
-	Auth = new(AuthConf{
+	return new(AuthConf{
 		Provider: *provider,
 		Oauth2:   oauth2conf,
 		Verifier: *idTokenVerifier,
-	})
-
-	return Auth, nil
+	}), nil
 }
 
 func oidcRedirect(c echo.Context, kc structs.Keycloak) error {
@@ -183,6 +224,10 @@ func oidcRedirect(c echo.Context, kc structs.Keycloak) error {
 	session.Values[PKCE_COOKIE] = code_verifier
 	session.Values[STATE] = state
 
+	if err = session.Save(c.Request(), c.Response()); err != nil {
+		return err
+	}
+
 	return c.Redirect(http.StatusFound, auth_url)
 }
 
@@ -190,17 +235,15 @@ func NewOauthCallback(kc structs.Keycloak) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		session, err := cookie.GetSession(c, COOKIE)
 
-		req := c.Request()
-
 		if err != nil {
 			return err
 		}
-
 		state := session.Values[STATE].(string)
 		code_verifier := session.Values[PKCE_COOKIE].(string)
 
+		req := c.Request()
 		if req.FormValue("state") != state {
-			return err
+			return echo.NewHTTPError(http.StatusUnauthorized, "State did not match state given to oauth")
 		}
 
 		auth_conf, err := OidcConf(kc, req.Context())
@@ -213,14 +256,15 @@ func NewOauthCallback(kc structs.Keycloak) echo.HandlerFunc {
 			req.FormValue("code"),
 			oauth2.VerifierOption(code_verifier),
 		)
+
 		if err != nil {
 			return err
 		}
-
 		rawIDToken, ok := oauth2token.Extra("id_token").(string)
 		if !ok {
 			return echo.NewHTTPError(http.StatusBadRequest, "ID token inaccessible")
 		}
+
 		idToken, err := auth_conf.Verifier.Verify(req.Context(), rawIDToken)
 		if err != nil {
 			return err
@@ -235,20 +279,31 @@ func NewOauthCallback(kc structs.Keycloak) echo.HandlerFunc {
 		}
 
 		profile := Profile{
-			Client: auth_conf.Oauth2.Client(context.Background(), oauth2token),
-			Email:  claims.Email,
-			Name:   claims.Name,
+			Token: MakeLiteToken(oauth2token),
+			Email: claims.Email,
+			Name:  claims.Name,
 		}
-		session.Values["profile"] = profile
+
+		hash := profile.Hash()
+		store[hash] = profile
+
+		session.Values["profile"] = hash
+
+		if err = session.Save(c.Request(), c.Response()); err != nil {
+			return err
+		}
 
 		admin, err := umaPermissionReq(
-			profile.Client,
+			*oauth2token,
 			[]string{PERMISSION},
 			kc,
 			req.Context(),
 		)
+		if err != nil {
+			return err
+		}
 
-		if err != nil || !admin {
+		if !admin {
 			return c.Redirect(http.StatusFound, "/")
 		} else {
 			return c.Redirect(http.StatusFound, "/admin")
