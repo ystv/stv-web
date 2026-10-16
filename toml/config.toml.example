@@ -6,16 +6,12 @@
     domain_name = "" # domain name
     force_reset_url_endpoint = "" # the url endpoint to forcefully reset all stored information
 
-[ad]
-    ad_bypass_username = ""
-    ad_bypass_password = ""
-    ad_server = "" # Active Directory server
-    ad_port = -1 # Active Directory port
-    ad_base_dn = "" # User base DN
-    ad_security = -1 # 0-SecurityNone 1-SecurityTLS 2-SecurityStartTLS 3-SecurityInsecureTLS 4-SecurityInsecureStartTLS
-    [ad.bind]
-        ad_bind_username = "" # Bind username
-        ad_bind_password = "" # Bind password
+[keycloak]
+    keycloak_url 		    = "http://localhost/"
+    keycloak_realm 		    = "realm"
+    keycloak_clientID		= "stv-web"
+    keycloak_secret 		= "client_secret"
+    keycloak_redirectURL	= "http://localhost:8080/oauth/callback"
 
 [mail]
     mail_host = "" # Mail server

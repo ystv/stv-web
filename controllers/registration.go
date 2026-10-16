@@ -6,6 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
+	"github.com/ystv/stv-web/auth"
 	"github.com/ystv/stv-web/storage"
 	"github.com/ystv/stv-web/store"
 	"github.com/ystv/stv-web/templates"
@@ -33,10 +34,27 @@ func (r *RegistrationRepo) Register(c echo.Context) error {
 		return c.Redirect(http.StatusTemporaryRedirect, "/")
 	}
 
-	err = r.controller.Template.RenderTemplate(c.Response().Writer, nil, templates.RegistrationTemplate)
+	profile, err := auth.GetProfile(c)
 	if err != nil {
-		return err
+		return r.errorHandle(c, err)
 	}
+
+	voter := storage.Voter{
+		Email: profile.Email,
+		Name:  profile.Name,
+	}
+
+	_, err = r.store.AddVoter(&voter)
+
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+
+	err = r.controller.Template.RenderTemplate(c.Response().Writer, &voter, templates.RegisteredTemplate)
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
+
 	return nil
 }
 

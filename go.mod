@@ -1,6 +1,6 @@
 module github.com/ystv/stv-web
 
-go 1.25.5
+go 1.26.0
 
 require (
 	github.com/BurntSushi/toml v1.5.0
@@ -16,10 +16,19 @@ require (
 )
 
 require (
+	github.com/gorilla/securecookie v1.1.2 // indirect
+	github.com/pquerna/cachecontrol v0.2.0 // indirect
+	golang.org/x/oauth2 v0.37.0 // indirect
+	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
+)
+
+require (
 	github.com/Azure/go-ntlmssp v0.1.0 // indirect
+	github.com/coreos/go-oidc v2.5.0+incompatible
 	github.com/go-asn1-ber/asn1-ber v1.5.8-0.20250403174932-29230038a667 // indirect
 	github.com/go-test/deep v1.1.1 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
+	github.com/gorilla/sessions v1.4.0
 	github.com/labstack/gommon v0.4.2 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
