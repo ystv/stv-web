@@ -1,6 +1,6 @@
 FROM golang:1.27.2-alpine3.24 AS build
 
-LABEL site="nouse-stv-web"
+LABEL site="ystv-stv-web"
 LABEL stage="builder"
 LABEL author="Liam Burnand"
 
