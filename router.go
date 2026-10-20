@@ -72,11 +72,11 @@ func (r *Router) loadRoutes() {
 
 	r.router.GET("/", r.repos.Home.Home)
 
-	auth_group := r.router.Group("/oauth")
+	authGroup := r.router.Group("/oauth")
 	{
-		auth_group.GET("", r.repos.Error.Error404)
-		auth_group.GET("/callback", auth.NewOauthCallback(r.config.Keycloak))
-		auth_group.GET("/logout", auth.NewOauthLogout(r.config.Keycloak))
+		authGroup.GET("", r.repos.Error.Error404)
+		authGroup.GET("/callback", auth.NewOauthCallback(r.config.Keycloak))
+		authGroup.GET("/logout", auth.NewOauthLogout(r.config.Keycloak))
 	}
 
 	admin := r.router.Group("/admin")

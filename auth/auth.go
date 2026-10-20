@@ -16,16 +16,16 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/ystv/stv-web/cookie"
 	"github.com/ystv/stv-web/storage"
-	"github.com/ystv/stv-web/store"
+	_store "github.com/ystv/stv-web/store"
 	"github.com/ystv/stv-web/structs"
 	"golang.org/x/oauth2"
 )
 
-const COOKIE string = "session"
-const PKCE_COOKIE string = "pkce"
-const STATE string = "state"
-const UMA_GRANT_TYPE string = "urn:ietf:params:oauth:grant-type:uma-ticket"
-const PERMISSION string = "stv-admin#stv-admin"
+const Cookie string = "session"
+const PkceCookie string = "pkce"
+const State string = "state"
+const UmaGrantType string = "urn:ietf:params:oauth:grant-type:uma-ticket"
+const Permission string = "stv-admin#stv-admin"
 
 type (
 	Profile struct {
@@ -54,22 +54,22 @@ func ProfileFromSession(session *storage.Session) Profile {
 	}
 }
 
-var local_store *store.Store
+var store *_store.Store
 
 func (p *Profile) Hash() [32]byte {
 	return sha256.Sum256([]byte(p.Name + p.Email))
 }
 
 func GetProfile(c echo.Context) (*Profile, error) {
-	session, err := cookie.GetSession(c, COOKIE)
+	session, err := cookie.GetSession(c, Cookie)
 	if err != nil {
 		return nil, err
 	}
 	hash, ok := session.Values["profile"].([32]byte)
 	if !ok {
-		return nil, fmt.Errorf("Profile lost by client!")
+		return nil, fmt.Errorf("profile lost by client")
 	}
-	s, err := local_store.GetSessionHash(hash[:], nil)
+	s, err := store.GetSessionHash(hash[:], nil)
 	if err != nil {
 		return nil, err
 	}
@@ -77,8 +77,8 @@ func GetProfile(c echo.Context) (*Profile, error) {
 	return &profile, nil
 }
 
-func AuthMw(_store *store.Store, kc structs.Keycloak) echo.MiddlewareFunc {
-	local_store = _store
+func Middleware(s *_store.Store, kc structs.Keycloak) echo.MiddlewareFunc {
+	store = s
 	gob.Register([32]byte{})
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -86,38 +86,44 @@ func AuthMw(_store *store.Store, kc structs.Keycloak) echo.MiddlewareFunc {
 				// if oauth callback, we're making a cookie so ignore this for now
 				return next(c)
 			}
-			session, err := cookie.GetSession(c, COOKIE)
+			session, err := cookie.GetSession(c, Cookie)
 			if err != nil && session == nil {
 				return err
 			}
 			hash, ok := session.Values["profile"].([32]byte)
-			s, err := local_store.GetSessionHash(hash[:], nil)
+			s, err := store.GetSessionHash(hash[:], nil)
 			if session.IsNew || !ok || s == nil {
 				return oidcRedirect(c, kc)
 			}
+			if err != nil {
+				return err
+			}
+
 			profile := ProfileFromSession(s)
 
-			split_url := strings.Split(strings.Trim(c.Request().URL.Path, "/"), "/")
+			splitUrl := strings.Split(strings.Trim(c.Request().URL.Path, "/"), "/")
 			token := profile.Token
-			var requested_permission []string
-			if split_url[0] == "admin" {
-				requested_permission = []string{"stv-admin#stv-admin"}
+			var requestedPermission []string
+			if splitUrl[0] == "admin" {
+				requestedPermission = []string{"stv-admin#stv-admin"}
 			} else {
-				requested_permission = []string{"Default Resource"}
+				requestedPermission = []string{"Default Resource"}
 			}
 			permission, err := umaPermissionReq(
 				token,
-				requested_permission,
+				requestedPermission,
 				kc,
 				c.Request().Context(),
 			)
 			if err != nil {
-				local_store.DeleteSession(hash[:], nil)
+				//nolint:errcheck // This only fails if no cookie exists but we're trying to get rid of it anyway...
+				_ = store.DeleteSession(hash[:], nil)
 				return err
 			}
 			if !permission {
-				local_store.DeleteSession(hash[:], nil)
-				return echo.NewHTTPError(http.StatusForbidden, fmt.Errorf("User not authenticated: %s", profile.Name))
+				//nolint:errcheck // This only fails if no cookie exists but we're trying to get rid of it anyway...
+				_ = store.DeleteSession(hash[:], nil)
+				return echo.NewHTTPError(http.StatusForbidden, fmt.Errorf("user not authenticated: %s", profile.Name))
 			}
 			return next(c) // accept either on /* or with UMA on /admin/*
 		}
@@ -125,14 +131,14 @@ func AuthMw(_store *store.Store, kc structs.Keycloak) echo.MiddlewareFunc {
 }
 
 func umaPermissionReq(token string, permissions []string, kc structs.Keycloak, ctx context.Context) (bool, error) {
-	conf, err := MakeOidcConf(kc, ctx)
+	conf, err := MakeOidcConf(ctx, kc)
 	if err != nil {
 		return false, err
 	}
 
 	uri := conf.Provider.Endpoint().TokenURL
 	form := url.Values{}
-	form.Set("grant_type", UMA_GRANT_TYPE)
+	form.Set("grant_type", UmaGrantType)
 	form.Set("audience", kc.ClientID)
 	form.Set("response_mode", "decision")
 	for _, permission := range permissions {
@@ -160,18 +166,18 @@ func umaPermissionReq(token string, permissions []string, kc structs.Keycloak, c
 
 	decoder := json.NewDecoder(response.Body)
 
-	var resp_body struct {
+	var respBody struct {
 		Result bool `json:"result"`
 	}
 
-	if err = decoder.Decode(&resp_body); err != nil {
+	if err = decoder.Decode(&respBody); err != nil {
 		return false, err
 	}
 
-	return resp_body.Result, nil
+	return respBody.Result, nil
 }
 
-func MakeOidcConf(kc structs.Keycloak, c context.Context) (*OidcConf, error) {
+func MakeOidcConf(c context.Context, kc structs.Keycloak) (*OidcConf, error) {
 	url := fmt.Sprintf("%s/realms/%s", strings.TrimSuffix(kc.URL, "/"), strings.Trim(kc.Realm, "/"))
 	provider, err := oidc.NewProvider(
 		c,
@@ -200,52 +206,52 @@ func MakeOidcConf(kc structs.Keycloak, c context.Context) (*OidcConf, error) {
 }
 
 func oidcRedirect(c echo.Context, kc structs.Keycloak) error {
-	session, err := cookie.GetSession(c, COOKIE)
+	session, err := cookie.GetSession(c, Cookie)
 	if err != nil && session == nil {
 		return err
 	}
 
-	conf, err := MakeOidcConf(kc, c.Request().Context())
+	conf, err := MakeOidcConf(c.Request().Context(), kc)
 
 	if err != nil {
 		return err
 	}
 
 	state := rand.Text()
-	code_verifier := oauth2.GenerateVerifier()
+	codeVerifier := oauth2.GenerateVerifier()
 
-	auth_url := conf.Oauth2.AuthCodeURL(
+	authUrl := conf.Oauth2.AuthCodeURL(
 		state,
 		oauth2.AccessTypeOnline,
-		oauth2.S256ChallengeOption(code_verifier),
+		oauth2.S256ChallengeOption(codeVerifier),
 	)
 
-	session.Values[PKCE_COOKIE] = code_verifier
-	session.Values[STATE] = state
+	session.Values[PkceCookie] = codeVerifier
+	session.Values[State] = state
 
 	if err = session.Save(c.Request(), c.Response()); err != nil {
 		return err
 	}
 
-	return c.Redirect(http.StatusFound, auth_url)
+	return c.Redirect(http.StatusFound, authUrl)
 }
 
 func NewOauthCallback(kc structs.Keycloak) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		session, err := cookie.GetSession(c, COOKIE)
+		session, err := cookie.GetSession(c, Cookie)
 
 		if err != nil {
 			return err
 		}
-		state := session.Values[STATE].(string)
-		code_verifier := session.Values[PKCE_COOKIE].(string)
+		state := session.Values[State].(string)
+		code_verifier := session.Values[PkceCookie].(string)
 
 		req := c.Request()
 		if req.FormValue("state") != state {
 			return echo.NewHTTPError(http.StatusUnauthorized, "State did not match state given to oauth")
 		}
 
-		auth_conf, err := MakeOidcConf(kc, req.Context())
+		auth_conf, err := MakeOidcConf(req.Context(), kc)
 		if err != nil {
 			return err
 		}
@@ -284,7 +290,10 @@ func NewOauthCallback(kc structs.Keycloak) echo.HandlerFunc {
 		}
 
 		hash := profile.Hash()
-		local_store.AddSession(hash[:], profile.Name, profile.Email, profile.Token, nil)
+		_, err = store.AddSession(hash[:], profile.Name, profile.Email, profile.Token, nil)
+		if err != nil {
+			return err
+		}
 
 		session.Values["profile"] = hash
 
@@ -294,7 +303,7 @@ func NewOauthCallback(kc structs.Keycloak) echo.HandlerFunc {
 
 		admin, err := umaPermissionReq(
 			profile.Token,
-			[]string{PERMISSION},
+			[]string{Permission},
 			kc,
 			req.Context(),
 		)
@@ -302,33 +311,34 @@ func NewOauthCallback(kc structs.Keycloak) echo.HandlerFunc {
 			return err
 		}
 
-		if !admin {
-			return c.Redirect(http.StatusFound, "/")
-		} else {
+		if admin {
 			return c.Redirect(http.StatusFound, "/admin")
 		}
+
+		return c.Redirect(http.StatusFound, "/")
 	}
 }
 
 func NewOauthLogout(kc structs.Keycloak) echo.HandlerFunc {
 	return func(c echo.Context) error {
-		conf, err := MakeOidcConf(kc, c.Request().Context())
+		conf, err := MakeOidcConf(c.Request().Context(), kc)
 		if err != nil {
-			return nil
+			return err
 		}
 
 		// if we can't access to delete, then it doesn't matter... (hopefully)
-		session, err := cookie.GetSession(c, COOKIE)
+		session, err := cookie.GetSession(c, Cookie)
 		if err == nil {
 			hash, ok := session.Values["profile"].([32]byte)
 			if ok {
-				local_store.DeleteSession(hash[:], nil)
+				//nolint:errcheck // Again, if it doesn't exist, we don't care!
+				store.DeleteSession(hash[:], nil)
 			}
 		}
 
-		logout_split := strings.Split(conf.Oauth2.Endpoint.TokenURL, "/")
-		logout_split[len(logout_split)-1] = "logout"
-		logout_url := strings.Join(logout_split, "/")
-		return c.Redirect(http.StatusFound, logout_url)
+		logoutSplit := strings.Split(conf.Oauth2.Endpoint.TokenURL, "/")
+		logoutSplit[len(logoutSplit)-1] = "logout"
+		logoutUrl := strings.Join(logoutSplit, "/")
+		return c.Redirect(http.StatusFound, logoutUrl)
 	}
 }

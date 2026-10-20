@@ -722,6 +722,9 @@ func (r *AdminRepo) SwitchRegistration(c echo.Context) error {
 func (r *AdminRepo) ForceReset(c echo.Context) error {
 	var err error
 	stv, err := r.store.Get()
+	if err != nil {
+		return err
+	}
 
 	err = r.store.DeleteAllElections(stv)
 	if err != nil {

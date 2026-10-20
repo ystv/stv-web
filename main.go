@@ -168,8 +168,8 @@ func main() {
 	controller := controllers.GetController(config.Server.DomainName)
 
 	config.Keycloak.Address = fmt.Sprintf("%v:%v", strings.Trim(config.Server.Address, "/"), config.Server.Port)
-	auth_key := sha256.Sum256([]byte(Version + Commit))
-	cookie_store := sessions.NewCookieStore(auth_key[:])
+	authKey := sha256.Sum256([]byte(Version + Commit))
+	cookieStore := sessions.NewCookieStore(authKey[:])
 
 	router1 := New(NewRouter{
 		Config: config,
@@ -177,8 +177,8 @@ func main() {
 		Debug:  config.Server.Debug,
 		Mailer: mailer,
 		Auth: []echo.MiddlewareFunc{
-			cookie.SessionMiddleware(cookie_store),
-			auth.AuthMw(newStore, config.Keycloak),
+			cookie.SessionMiddleware(cookieStore),
+			auth.Middleware(newStore, config.Keycloak),
 		},
 	})
 

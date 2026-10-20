@@ -32,18 +32,18 @@ func (store *Store) GetSessionHash(hash []byte, stv *storage.STV) (*storage.Sess
 	}
 
 	if len(hash) != 32 {
-		return nil, fmt.Errorf("Invalid length of hash, need 32, got: %v", len(hash))
+		return nil, fmt.Errorf("invalid length of hash, need 32, got: %v", len(hash))
 	}
 
 	for _, session := range stv.GetSessions() {
-		if bytes.Equal(session.Hash, hash[:]) {
+		if bytes.Equal(session.Hash, hash) {
 			return session, nil
 		}
 	}
 	return nil, nil
 }
 
-func (store *Store) AddSession(hash []byte, name string, email string, access_token string, stv *storage.STV) (*storage.Session, error) {
+func (store *Store) AddSession(hash []byte, name string, email string, accessToken string, stv *storage.STV) (*storage.Session, error) {
 	var err error
 	if stv == nil {
 		stv, err = store.Get()
@@ -57,15 +57,15 @@ func (store *Store) AddSession(hash []byte, name string, email string, access_to
 		return nil, err
 	}
 	if check != nil {
-		return nil, fmt.Errorf("Cannot register two sessions for the same profile!")
+		return nil, fmt.Errorf("cannot register two sessions for the same profile")
 	}
 
 	session := storage.Session{
-		Hash:       hash[:],
+		Hash:       hash,
 		Name:       name,
 		Email:      email,
 		Registered: false,
-		Access:     access_token,
+		Access:     accessToken,
 	}
 
 	stv.Sessions = append(stv.GetSessions(), &session)
@@ -83,7 +83,7 @@ func (store *Store) DeleteSession(hash []byte, stv *storage.STV) error {
 			return err
 		}
 	}
-	var index int = -1
+	var index = -1
 	for i, s := range stv.Sessions {
 		if bytes.Equal(s.Hash, hash) {
 			index = i
@@ -91,7 +91,7 @@ func (store *Store) DeleteSession(hash []byte, stv *storage.STV) error {
 		}
 	}
 	if index == -1 {
-		return fmt.Errorf("Could not find hash: %v", string(hash))
+		return fmt.Errorf("could not find hash: %v", string(hash))
 	}
 	copy(stv.Sessions[index:], stv.Sessions[index+1:])
 	stv.Sessions[len(stv.Sessions)-1] = nil
@@ -775,7 +775,7 @@ func (store *Store) DeleteVoter(voter []byte, stv *storage.STV) error {
 		return err
 	}
 	if session == nil {
-		return fmt.Errorf("No user with that hash!")
+		return fmt.Errorf("no user with that hash")
 	}
 
 	session.Registered = false
@@ -793,6 +793,9 @@ func (store *Store) DeleteAllVoters(stv *storage.STV) error {
 	}
 
 	voters, err := store.GetVoters(stv)
+	if err != nil {
+		return err
+	}
 
 	for _, session := range voters {
 		session.Registered = false
