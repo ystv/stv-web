@@ -732,6 +732,9 @@ func (r *AdminRepo) ForceReset(c echo.Context) error {
 	}
 
 	err = r.store.DeleteAllSessions(stv)
+	if err != nil {
+		return r.errorHandle(c, err)
+	}
 
 	err = r.store.DeleteAllURLs(stv)
 	if err != nil {

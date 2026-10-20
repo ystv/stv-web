@@ -101,19 +101,19 @@ func Middleware(s *_store.Store, kc structs.Keycloak) echo.MiddlewareFunc {
 
 			profile := ProfileFromSession(s)
 
-			splitUrl := strings.Split(strings.Trim(c.Request().URL.Path, "/"), "/")
+			splitURL := strings.Split(strings.Trim(c.Request().URL.Path, "/"), "/")
 			token := profile.Token
 			var requestedPermission []string
-			if splitUrl[0] == "admin" {
+			if splitURL[0] == "admin" {
 				requestedPermission = []string{"stv-admin#stv-admin"}
 			} else {
 				requestedPermission = []string{"Default Resource"}
 			}
 			permission, err := umaPermissionReq(
+				c.Request().Context(),
 				token,
 				requestedPermission,
 				kc,
-				c.Request().Context(),
 			)
 			if err != nil {
 				//nolint:errcheck // This only fails if no cookie exists but we're trying to get rid of it anyway...
@@ -130,7 +130,7 @@ func Middleware(s *_store.Store, kc structs.Keycloak) echo.MiddlewareFunc {
 	}
 }
 
-func umaPermissionReq(token string, permissions []string, kc structs.Keycloak, ctx context.Context) (bool, error) {
+func umaPermissionReq(ctx context.Context, token string, permissions []string, kc structs.Keycloak) (bool, error) {
 	conf, err := MakeOidcConf(ctx, kc)
 	if err != nil {
 		return false, err
@@ -220,7 +220,7 @@ func oidcRedirect(c echo.Context, kc structs.Keycloak) error {
 	state := rand.Text()
 	codeVerifier := oauth2.GenerateVerifier()
 
-	authUrl := conf.Oauth2.AuthCodeURL(
+	authURL := conf.Oauth2.AuthCodeURL(
 		state,
 		oauth2.AccessTypeOnline,
 		oauth2.S256ChallengeOption(codeVerifier),
@@ -233,7 +233,7 @@ func oidcRedirect(c echo.Context, kc structs.Keycloak) error {
 		return err
 	}
 
-	return c.Redirect(http.StatusFound, authUrl)
+	return c.Redirect(http.StatusFound, authURL)
 }
 
 func NewOauthCallback(kc structs.Keycloak) echo.HandlerFunc {
@@ -244,22 +244,22 @@ func NewOauthCallback(kc structs.Keycloak) echo.HandlerFunc {
 			return err
 		}
 		state := session.Values[State].(string)
-		code_verifier := session.Values[PkceCookie].(string)
+		codeVerifier := session.Values[PkceCookie].(string)
 
 		req := c.Request()
 		if req.FormValue("state") != state {
 			return echo.NewHTTPError(http.StatusUnauthorized, "State did not match state given to oauth")
 		}
 
-		auth_conf, err := MakeOidcConf(req.Context(), kc)
+		authConf, err := MakeOidcConf(req.Context(), kc)
 		if err != nil {
 			return err
 		}
 
-		oauth2token, err := auth_conf.Oauth2.Exchange(
+		oauth2token, err := authConf.Oauth2.Exchange(
 			req.Context(),
 			req.FormValue("code"),
-			oauth2.VerifierOption(code_verifier),
+			oauth2.VerifierOption(codeVerifier),
 		)
 
 		if err != nil {
@@ -270,7 +270,7 @@ func NewOauthCallback(kc structs.Keycloak) echo.HandlerFunc {
 			return echo.NewHTTPError(http.StatusBadRequest, "ID token inaccessible")
 		}
 
-		idToken, err := auth_conf.Verifier.Verify(req.Context(), rawIDToken)
+		idToken, err := authConf.Verifier.Verify(req.Context(), rawIDToken)
 		if err != nil {
 			return err
 		}
@@ -302,10 +302,10 @@ func NewOauthCallback(kc structs.Keycloak) echo.HandlerFunc {
 		}
 
 		admin, err := umaPermissionReq(
+			req.Context(),
 			profile.Token,
 			[]string{Permission},
 			kc,
-			req.Context(),
 		)
 		if err != nil {
 			return err
@@ -338,7 +338,7 @@ func NewOauthLogout(kc structs.Keycloak) echo.HandlerFunc {
 
 		logoutSplit := strings.Split(conf.Oauth2.Endpoint.TokenURL, "/")
 		logoutSplit[len(logoutSplit)-1] = "logout"
-		logoutUrl := strings.Join(logoutSplit, "/")
-		return c.Redirect(http.StatusFound, logoutUrl)
+		logoutURL := strings.Join(logoutSplit, "/")
+		return c.Redirect(http.StatusFound, logoutURL)
 	}
 }
