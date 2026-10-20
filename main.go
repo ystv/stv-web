@@ -6,13 +6,17 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
+	"github.com/labstack/echo/v4"
 	_ "golang.org/x/crypto/x509roots/fallback" // CA bundle for FROM Scratch
 
+	"github.com/ystv/stv-web/auth"
 	"github.com/ystv/stv-web/controllers"
+	"github.com/ystv/stv-web/cookie"
 	"github.com/ystv/stv-web/mail"
 	"github.com/ystv/stv-web/store"
 	"github.com/ystv/stv-web/structs"
@@ -92,11 +96,10 @@ func main() {
 					Port:       os.Getenv("STV_PORT"),
 				},
 				Keycloak: structs.Keycloak{
-					URL:         os.Getenv("STV_KEYCLOAK_URL"),
-					Realm:       os.Getenv("STV_KEYCLOAK_REAL"),
-					ClientID:    os.Getenv("STV_KEYCLOAK_CLIENTID"),
-					Secret:      os.Getenv("STV_KEYCLOAK_SECRET"),
-					RedirectURL: os.Getenv("STV_KEYCLOAK_REDIRECTURL"),
+					URL:      os.Getenv("STV_KEYCLOAK_URL"),
+					Realm:    os.Getenv("STV_KEYCLOAK_REAL"),
+					ClientID: os.Getenv("STV_KEYCLOAK_CLIENTID"),
+					Secret:   os.Getenv("STV_KEYCLOAK_SECRET"),
 				},
 				Mail: structs.Mail{
 					Host:      os.Getenv("STV_MAIL_HOST"),
@@ -154,9 +157,9 @@ func main() {
 		log.Fatal("Failed to create store: ", err)
 	}
 
-	_, err = newStore.GetAllowRegistration()
+	_, err = newStore.GetAllowRegistration(nil)
 	if err != nil {
-		_, err = newStore.SetAllowRegistration(false)
+		_, err = newStore.SetAllowRegistration(false, nil)
 		if err != nil {
 			log.Fatal("Failed to initialise allow registration in store: ", err)
 		}
@@ -164,6 +167,7 @@ func main() {
 
 	controller := controllers.GetController(config.Server.DomainName)
 
+	config.Keycloak.Address = fmt.Sprintf("%v:%v", strings.Trim(config.Server.Address, "/"), config.Server.Port)
 	auth_key := sha256.Sum256([]byte(Version + Commit))
 	cookie_store := sessions.NewCookieStore(auth_key[:])
 
@@ -172,7 +176,10 @@ func main() {
 		Repos:  controllers.NewRepos(controller, mailer, newStore, mailConfig, Commit, Version),
 		Debug:  config.Server.Debug,
 		Mailer: mailer,
-		Cookie: cookie_store,
+		Auth: []echo.MiddlewareFunc{
+			cookie.SessionMiddleware(cookie_store),
+			auth.AuthMw(newStore, config.Keycloak),
+		},
 	})
 
 	log.Printf("YSTV STV voting site: %s, commit: %s, version: %s\n", config.Server.Address+":"+config.Server.Port, Commit, Version)

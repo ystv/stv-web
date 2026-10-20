@@ -26,6 +26,7 @@ type (
 		ClientID    string `toml:"keycloak_clientID"`
 		Secret      string `toml:"keycloak_clientsecret"`
 		RedirectURL string `toml:"keycloak_redirectURL"`
+		Address     string `toml:"address,omitempty"`
 	}
 
 	Mail struct {

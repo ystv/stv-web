@@ -7,13 +7,11 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gorilla/sessions"
 	"github.com/labstack/echo/v4"
 	middleware2 "github.com/labstack/echo/v4/middleware"
 
 	"github.com/ystv/stv-web/auth"
 	"github.com/ystv/stv-web/controllers"
-	"github.com/ystv/stv-web/cookie"
 	utilMail "github.com/ystv/stv-web/mail"
 	"github.com/ystv/stv-web/middleware"
 	"github.com/ystv/stv-web/structs"
@@ -28,14 +26,14 @@ type (
 		repos  *controllers.Repos
 		router *echo.Echo
 		mailer *utilMail.Mailer
-		cookie sessions.Store
+		auth   []echo.MiddlewareFunc
 	}
 	NewRouter struct {
 		Config structs.Config
 		Repos  *controllers.Repos
 		Debug  bool
 		Mailer *utilMail.Mailer
-		Cookie sessions.Store
+		Auth   []echo.MiddlewareFunc
 	}
 )
 
@@ -45,7 +43,7 @@ func New(conf NewRouter) *Router {
 		router: echo.New(),
 		repos:  conf.Repos,
 		mailer: conf.Mailer,
-		cookie: conf.Cookie,
+		auth:   conf.Auth,
 	}
 	r.router.HideBanner = true
 
@@ -70,8 +68,7 @@ func (r *Router) loadRoutes() {
 
 	r.router.Use(middleware2.BodyLimit("15M"))
 
-	r.router.Use(cookie.SessionMiddleware(r.cookie))
-	r.router.Use(auth.AuthMw(r.config.Keycloak))
+	r.router.Use(r.auth...)
 
 	r.router.GET("/", r.repos.Home.Home)
 
@@ -105,7 +102,7 @@ func (r *Router) loadRoutes() {
 		voters := admin.Group("/voters")
 		{
 			voters.GET("", r.repos.Admin.Voters)
-			voters.POST("", r.repos.Admin.AddVoter)
+			// voters.POST("", r.repos.Admin.AddVoter)
 			voters.POST("/delete", r.repos.Admin.DeleteVoter)
 			voters.POST("/registration", r.repos.Admin.SwitchRegistration)
 		}
@@ -116,7 +113,6 @@ func (r *Router) loadRoutes() {
 	{
 		registration.GET("", r.repos.Registration.Register)
 		registration.GET("/qr", r.repos.Registration.QR)
-		registration.POST("", r.repos.Registration.AddVoter)
 	}
 
 	vote := r.router.Group("/vote/:url")

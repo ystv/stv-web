@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net/http"
@@ -36,7 +37,7 @@ func NewAdminRepo(controller Controller, mailer *mail.Mailer, store *store.Store
 }
 
 func (r *AdminRepo) Admin(c echo.Context) error {
-	elections, err := r.store.GetElections()
+	elections, err := r.store.GetElections(nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -57,7 +58,7 @@ func (r *AdminRepo) Admin(c echo.Context) error {
 			errInt++
 		}
 	}
-	temp, err := r.store.GetVoters()
+	temp, err := r.store.GetVoters(nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -110,7 +111,7 @@ func (r *AdminRepo) AddCandidate(c echo.Context) error {
 		return r.errorHandle(c, fmt.Errorf("name cannot be empty"))
 	}
 
-	election, err := r.store.FindElection(id)
+	election, err := r.store.FindElection(id, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -121,7 +122,7 @@ func (r *AdminRepo) AddCandidate(c echo.Context) error {
 		return r.errorHandle(c, fmt.Errorf("cannot add candidate to closed election"))
 	}
 
-	candidates, err := r.store.GetCandidatesElectionID(id)
+	candidates, err := r.store.GetCandidatesElectionID(id, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -137,7 +138,7 @@ func (r *AdminRepo) AddCandidate(c echo.Context) error {
 		Name:     name,
 	}
 
-	_, err = r.store.AddCandidate(candidate)
+	_, err = r.store.AddCandidate(candidate, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -149,18 +150,18 @@ func (r *AdminRepo) DeleteCandidate(c echo.Context) error {
 	if len(id) == 0 {
 		return r.errorHandle(c, fmt.Errorf("invalid candidate id"))
 	}
-	candidate, err := r.store.FindCandidate(id)
+	candidate, err := r.store.FindCandidate(id, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	election, err := r.store.FindElection(candidate.GetElection())
+	election, err := r.store.FindElection(candidate.GetElection(), nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
 	if election.GetOpen() || election.GetClosed() {
 		return r.errorHandle(c, fmt.Errorf("cannot delete candidate of open or closed election"))
 	}
-	err = r.store.DeleteCandidate(id)
+	err = r.store.DeleteCandidate(id, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -197,7 +198,7 @@ func (r *AdminRepo) Election(c echo.Context) error {
 	if len(id) == 0 {
 		return r.errorHandle(c, fmt.Errorf("invalid election id"))
 	}
-	election, err := r.store.FindElection(id)
+	election, err := r.store.FindElection(id, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -205,7 +206,7 @@ func (r *AdminRepo) Election(c echo.Context) error {
 	if len(c.FormValue("error")) > 0 {
 		err1 = c.FormValue("error")
 	}
-	candidates, err := r.store.GetCandidatesElectionID(id)
+	candidates, err := r.store.GetCandidatesElectionID(id, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -218,7 +219,7 @@ func (r *AdminRepo) Election(c echo.Context) error {
 					continue
 				}
 				var candidate *storage.Candidate
-				candidate, err = r.store.FindCandidate(wc)
+				candidate, err = r.store.FindCandidate(wc, nil)
 				if err != nil {
 					fmt.Println(err)
 					candidate = &storage.Candidate{Name: wc}
@@ -231,13 +232,13 @@ func (r *AdminRepo) Election(c echo.Context) error {
 	var noOfBallots uint64
 	if election.GetOpen() || election.GetClosed() {
 		var ballots []*storage.Ballot
-		ballots, err = r.store.GetBallotsElectionID(election.GetId())
+		ballots, err = r.store.GetBallotsElectionID(election.GetId(), nil)
 		if err != nil {
 			return r.errorHandle(c, err)
 		}
 		noOfBallots = uint64(len(ballots))
 	}
-	voters, err := r.store.GetVoters()
+	voters, err := r.store.GetVoters(nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -246,7 +247,7 @@ func (r *AdminRepo) Election(c echo.Context) error {
 		Candidates []*storage.Candidate
 		Ballots    uint64
 		Error      string
-		VotersList []*storage.Voter
+		VotersList []*storage.Session
 	}{
 		Election:   election,
 		Candidates: candidates,
@@ -288,7 +289,7 @@ func (r *AdminRepo) AddElection(c echo.Context) error {
 		Seats:       seats,
 	}
 
-	e1, err := r.store.AddElection(election)
+	e1, err := r.store.AddElection(election, nil)
 	if err != nil && e1 == nil {
 		return r.errorHandle(c, err)
 	}
@@ -328,7 +329,7 @@ func (r *AdminRepo) EditElection(c echo.Context) error {
 		Seats:       seats,
 	}
 
-	e1, err := r.store.EditElection(election)
+	e1, err := r.store.EditElection(election, nil)
 	if err != nil && e1 == nil {
 		return r.errorHandle(c, err)
 	}
@@ -342,7 +343,7 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 		return r.errorHandle(c, fmt.Errorf("invalid election id"))
 	}
 
-	election, err := r.store.FindElection(id)
+	election, err := r.store.FindElection(id, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -353,7 +354,7 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 		return r.errorHandle(c, fmt.Errorf("cannot reopen election that has been closed"))
 	}
 
-	candidates, err := r.store.GetCandidatesElectionID(id)
+	candidates, err := r.store.GetCandidatesElectionID(id, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -362,12 +363,12 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 		return r.errorHandle(c, fmt.Errorf("cannot open election with no candidates"))
 	}
 
-	err = r.store.OpenElection(id)
+	err = r.store.OpenElection(id, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
 
-	voters, err := r.store.GetVoters()
+	voters, err := r.store.GetVoters(nil)
 	if err != nil {
 		return r.errorHandle(c, fmt.Errorf("failed to get voters: %w", err))
 	}
@@ -390,7 +391,7 @@ func (r *AdminRepo) OpenElection(c echo.Context) error {
 	return c.Redirect(http.StatusFound, fmt.Sprintf("/admin/election/%s", election.GetId()))
 }
 
-func (r *AdminRepo) sendEmailThread(voters []*storage.Voter, election *storage.Election) {
+func (r *AdminRepo) sendEmailThread(voters []*storage.Session, election *storage.Election) {
 	for _, voter := range voters {
 		skip := false
 		for _, v := range election.GetExcluded() {
@@ -401,12 +402,12 @@ func (r *AdminRepo) sendEmailThread(voters []*storage.Voter, election *storage.E
 
 		if !skip {
 			url := &storage.URL{
-				Election: election.GetId(),
-				Voter:    voter.GetEmail(),
-				Voted:    false,
+				Election:  election.GetId(),
+				VoterHash: voter.GetHash(),
+				Voted:     false,
 			}
 
-			url, err := r.store.AddURL(url)
+			url, err := r.store.AddURL(url, nil)
 			if err != nil {
 				fmt.Println(err)
 			}
@@ -456,7 +457,7 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 		return r.errorHandle(c, fmt.Errorf("invalid election id"))
 	}
 
-	election, err := r.store.FindElection(id)
+	election, err := r.store.FindElection(id, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -471,7 +472,7 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 		return r.errorHandle(c, fmt.Errorf("cannot close election that has no or negative seats: %d", election.Seats))
 	}
 
-	ballots, err := r.store.GetBallotsElectionID(id)
+	ballots, err := r.store.GetBallotsElectionID(id, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -483,7 +484,7 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 		candidates = append(candidates, ron)
 	}
 
-	candidatesStore, err := r.store.GetCandidatesElectionID(id)
+	candidatesStore, err := r.store.GetCandidatesElectionID(id, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -554,12 +555,12 @@ func (r *AdminRepo) CloseElection(c echo.Context) error {
 
 	election.Result = result
 
-	election, err = r.store.EditElection(election)
+	election, err = r.store.EditElection(election, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
 
-	err = r.store.CloseElection(id)
+	err = r.store.CloseElection(id, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -573,27 +574,27 @@ func (r *AdminRepo) Exclude(c echo.Context) error {
 		return r.errorHandle(c, fmt.Errorf("invalid election id"))
 	}
 
-	election, err := r.store.FindElection(id)
+	election, err := r.store.FindElection(id, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
 
-	email := c.FormValue("email")
+	hash := c.FormValue("hash")
 
-	voter, err := r.store.FindVoter(email)
+	voter, err := r.store.GetSessionHash([]byte(hash), nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
 
 	for _, v := range election.GetExcluded() {
-		if v.GetEmail() == voter.GetEmail() {
+		if bytes.Equal(v.GetHash(), voter.GetHash()) {
 			return c.Redirect(http.StatusFound, fmt.Sprintf("/admin/election/%s", election.GetId()))
 		}
 	}
 
 	election.Excluded = append(election.GetExcluded(), voter)
 
-	_, err = r.store.EditElection(election)
+	_, err = r.store.EditElection(election, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -607,14 +608,14 @@ func (r *AdminRepo) Include(c echo.Context) error {
 		return r.errorHandle(c, fmt.Errorf("invalid election id"))
 	}
 
-	election, err := r.store.FindElection(id)
+	election, err := r.store.FindElection(id, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
 
-	email := c.Param("email")
+	hash := c.Param("hash")
 
-	voter, err := r.store.FindVoter(email)
+	voter, err := r.store.GetSessionHash([]byte(hash), nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -625,7 +626,7 @@ func (r *AdminRepo) Include(c echo.Context) error {
 			election.Excluded[len(election.GetExcluded())-1] = nil                     // Erase last element (write zero value)
 			election.Excluded = election.GetExcluded()[:len(election.GetExcluded())-1] // Truncate slice
 
-			_, err = r.store.EditElection(election)
+			_, err = r.store.EditElection(election, nil)
 			if err != nil {
 				return r.errorHandle(c, err)
 			}
@@ -642,7 +643,7 @@ func (r *AdminRepo) DeleteElection(c echo.Context) error {
 		return r.errorHandle(c, fmt.Errorf("invalid election id"))
 	}
 
-	err := r.store.DeleteElection(id)
+	err := r.store.DeleteElection(id, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -653,16 +654,20 @@ func (r *AdminRepo) DeleteElection(c echo.Context) error {
 func (r *AdminRepo) Voters(c echo.Context) error {
 	stv, err := r.store.Get()
 	if err != nil {
-		return r.errorHandle(c, err)
+		return err
 	}
-	voters := stv.GetVoters()
+
+	voters, err := r.store.GetVoters(stv)
+	if err != nil {
+		return err
+	}
 
 	var err1 string
 	if len(c.FormValue("error")) > 0 {
 		err1 = c.FormValue("error")
 	}
 	data := struct {
-		Voters            []*storage.Voter
+		Voters            []*storage.Session
 		AllowRegistration bool
 		Error             string
 	}{
@@ -677,25 +682,25 @@ func (r *AdminRepo) Voters(c echo.Context) error {
 	return nil
 }
 
-func (r *AdminRepo) AddVoter(c echo.Context) error {
-	email := c.FormValue("email")
-	name := c.FormValue("name")
-	if len(name) == 0 || len(email) == 0 {
-		return r.errorHandle(c, fmt.Errorf("name and email need to be filled"))
-	}
-	_, err := r.store.AddVoter(&storage.Voter{
-		Email: email,
-		Name:  name,
-	})
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
-	return r.Voters(c)
-}
+// func (r *AdminRepo) AddVoter(c echo.Context) error {
+// 	email := c.FormValue("email")
+// 	name := c.FormValue("name")
+// 	if len(name) == 0 || len(email) == 0 {
+// 		return r.errorHandle(c, fmt.Errorf("name and email need to be filled"))
+// 	}
+// 	_, err := r.store.AddVoter(&storage.Voter{
+// 		Email: email,
+// 		Name:  name,
+// 	})
+// 	if err != nil {
+// 		return r.errorHandle(c, err)
+// 	}
+// 	return r.Voters(c)
+// }
 
 func (r *AdminRepo) DeleteVoter(c echo.Context) error {
-	email := c.FormValue("email")
-	err := r.store.DeleteVoter(email)
+	hash := c.FormValue("hash")
+	err := r.store.DeleteVoter([]byte(hash), nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -703,11 +708,11 @@ func (r *AdminRepo) DeleteVoter(c echo.Context) error {
 }
 
 func (r *AdminRepo) SwitchRegistration(c echo.Context) error {
-	allow, err := r.store.GetAllowRegistration()
+	allow, err := r.store.GetAllowRegistration(nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
-	_, err = r.store.SetAllowRegistration(!allow)
+	_, err = r.store.SetAllowRegistration(!allow, nil)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
@@ -716,27 +721,26 @@ func (r *AdminRepo) SwitchRegistration(c echo.Context) error {
 
 func (r *AdminRepo) ForceReset(c echo.Context) error {
 	var err error
-	err = r.store.DeleteAllElections()
+	stv, err := r.store.Get()
+
+	err = r.store.DeleteAllElections(stv)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
 
-	err = r.store.DeleteAllVoters()
+	err = r.store.DeleteAllSessions(stv)
+
+	err = r.store.DeleteAllURLs(stv)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
 
-	err = r.store.DeleteAllURLs()
+	err = r.store.DeleteAllCandidates(stv)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
 
-	err = r.store.DeleteAllCandidates()
-	if err != nil {
-		return r.errorHandle(c, err)
-	}
-
-	_, err = r.store.SetAllowRegistration(false)
+	_, err = r.store.SetAllowRegistration(false, stv)
 	if err != nil {
 		return r.errorHandle(c, err)
 	}
