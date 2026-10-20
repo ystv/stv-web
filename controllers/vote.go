@@ -32,7 +32,7 @@ func (r *VoteRepo) Vote(c echo.Context) error {
 		}
 		return fmt.Errorf("invalid url")
 	}
-	u1, err := r.store.FindURL(url)
+	u1, err := r.store.FindURL(url, nil)
 	if err != nil {
 		err = r.controller.Template.RenderTemplate(c.Response().Writer, struct{ Error string }{Error: "Invalid URL"}, templates.VoteErrorTemplate)
 		if err != nil {
@@ -41,7 +41,7 @@ func (r *VoteRepo) Vote(c echo.Context) error {
 		return err
 	}
 
-	e1, err := r.store.FindElection(u1.GetElection())
+	e1, err := r.store.FindElection(u1.GetElection(), nil)
 	if err != nil {
 		err = r.controller.Template.RenderTemplate(c.Response().Writer, struct{ Error string }{Error: "Invalid Election"}, templates.VoteErrorTemplate)
 		if err != nil {
@@ -65,7 +65,7 @@ func (r *VoteRepo) Vote(c echo.Context) error {
 		return fmt.Errorf("unable to vote on a non-open election")
 	}
 
-	c1, err := r.store.GetCandidatesElectionID(e1.GetId())
+	c1, err := r.store.GetCandidatesElectionID(e1.GetId(), nil)
 	if err != nil {
 		err = r.controller.Template.RenderTemplate(c.Response().Writer, struct{ Error string }{Error: "Candidates cannot be found"}, templates.VoteErrorTemplate)
 		if err != nil {
@@ -74,7 +74,7 @@ func (r *VoteRepo) Vote(c echo.Context) error {
 		return fmt.Errorf("unable to get candidates")
 	}
 
-	v1, err := r.store.FindVoter(u1.GetVoter())
+	v1, err := r.store.GetSessionHash(u1.GetVoterHash(), nil)
 	if err != nil {
 		err = r.controller.Template.RenderTemplate(c.Response().Writer, struct{ Error string }{Error: "Voter cannot be found"}, templates.VoteErrorTemplate)
 		if err != nil {
@@ -94,7 +94,7 @@ func (r *VoteRepo) Vote(c echo.Context) error {
 	data := struct {
 		Election   *storage.Election
 		Candidates []*storage.Candidate
-		Voter      *storage.Voter
+		Voter      *storage.Session
 		URL        string
 	}{
 		Election:   e1,
@@ -112,7 +112,7 @@ func (r *VoteRepo) Vote(c echo.Context) error {
 func (r *VoteRepo) AddVote(c echo.Context) error {
 	url := c.Param("url")
 
-	u1, err := r.store.FindURL(url)
+	u1, err := r.store.FindURL(url, nil)
 	if err != nil {
 		err = r.controller.Template.RenderTemplate(c.Response().Writer, struct{ Error string }{Error: "URL not found"}, templates.VoteErrorTemplate)
 		if err != nil {
@@ -142,7 +142,7 @@ func (r *VoteRepo) AddVote(c echo.Context) error {
 		Choice:   m,
 	}
 
-	_, err = r.store.AddBallot(ballot)
+	_, err = r.store.AddBallot(ballot, nil)
 	if err != nil {
 		err = r.controller.Template.RenderTemplate(c.Response().Writer, struct{ Error string }{Error: err.Error()}, templates.VoteErrorTemplate)
 		if err != nil {
@@ -151,7 +151,7 @@ func (r *VoteRepo) AddVote(c echo.Context) error {
 		return err
 	}
 
-	err = r.store.SetURLVoted(u1.GetUrl())
+	err = r.store.SetURLVoted(u1.GetUrl(), nil)
 	if err != nil {
 		return err
 	}

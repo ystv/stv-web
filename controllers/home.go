@@ -22,7 +22,7 @@ func NewHomeRepo(controller Controller, store *store.Store) *HomeRepo {
 }
 
 func (r *HomeRepo) Home(c echo.Context) error {
-	allow, err := r.store.GetAllowRegistration()
+	allow, err := r.store.GetAllowRegistration(nil)
 	if err != nil {
 		fmt.Println(err)
 		allow = false

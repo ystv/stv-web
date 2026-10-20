@@ -5,13 +5,14 @@ package structs
 // See the comments for Server and PageContext for more details.
 type (
 	Config struct {
-		Server Server `toml:"server"`
-		AD     AD     `toml:"ad"`
-		Mail   Mail   `toml:"mail"`
+		Server   Server   `toml:"server"`
+		Keycloak Keycloak `toml:"keycloak"`
+		Mail     Mail     `toml:"mail"`
 	}
 
 	Server struct {
 		Debug                 bool   `toml:"debug"`
+		Port                  string `toml:"port"`
 		Address               string `toml:"address"`
 		DomainName            string `toml:"domain_name"`
 		ForceResetURLEndpoint string `toml:"force_reset_url_endpoint"`
@@ -19,19 +20,13 @@ type (
 		Version               string `toml:"version,omitempty"`
 	}
 
-	AD struct {
-		BypassUsername string `toml:"ad_bypass_username"`
-		BypassPassword string `toml:"ad_bypass_password"`
-		Server         string `toml:"ad_server"`
-		Port           int    `toml:"ad_port"`
-		BaseDN         string `toml:"ad_base_dn"`
-		Security       int    `toml:"ad_security"`
-		Bind           ADBind `toml:"bind"`
-	}
-
-	ADBind struct {
-		Username string `toml:"ad_bind_username"`
-		Password string `toml:"ad_bind_password"`
+	Keycloak struct {
+		URL         string `toml:"keycloak_url"`
+		Realm       string `toml:"keycloak_realm"`
+		ClientID    string `toml:"keycloak_clientID"`
+		Secret      string `toml:"keycloak_clientsecret"`
+		RedirectURL string `toml:"keycloak_redirectURL"`
+		Address     string `toml:"address,omitempty"`
 	}
 
 	Mail struct {

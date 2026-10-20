@@ -3,12 +3,20 @@ package storage;
 option go_package = "github.com/ystv/stv-web/storage";
 
 message STV {
-    repeated Ballot ballots = 1;
-    repeated Candidate candidates = 2;
-    repeated Election elections = 3;
-    repeated URL urls = 4;
-    repeated Voter voters = 5;
+    repeated Session sessions = 1;
+    repeated Ballot ballots = 2;
+    repeated Candidate candidates = 3;
+    repeated Election elections = 4;
+    repeated URL urls = 5;
     bool allowRegistration = 6;
+}
+
+message Session {
+    bytes hash = 1;
+    string name = 2;
+    string email = 3;
+    bool registered = 4;
+    string access = 5;
 }
 
 message Ballot {
@@ -32,7 +40,7 @@ message Election {
     bool open = 6;
     bool closed = 7;
     Result result = 8;
-    repeated Voter excluded = 9;
+    repeated Session excluded = 9;
     uint64 voters = 10;
 }
 
@@ -58,11 +66,7 @@ message CandidateStatus {
 message URL {
     string url = 1;
     string election = 2;
-    string voter = 3;
+    bytes voter_hash = 3;
     bool voted = 4;
 }
 
-message Voter {
-    string email = 1;
-    string name = 2;
-}

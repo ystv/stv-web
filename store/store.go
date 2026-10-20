@@ -1,6 +1,7 @@
 package store
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 
@@ -21,10 +22,103 @@ func NewStore(root bool) (*Store, error) {
 	return &Store{backend: backend}, nil
 }
 
-func (store *Store) GetBallotsElectionID(id string) ([]*storage.Ballot, error) {
-	stv, err := store.Get()
+func (store *Store) GetSessionHash(hash []byte, stv *storage.STV) (*storage.Session, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if len(hash) != 32 {
+		return nil, fmt.Errorf("invalid length of hash, need 32, got: %v", len(hash))
+	}
+
+	for _, session := range stv.GetSessions() {
+		if bytes.Equal(session.Hash, hash) {
+			return session, nil
+		}
+	}
+	return nil, nil
+}
+
+func (store *Store) AddSession(hash []byte, name string, email string, accessToken string, stv *storage.STV) (*storage.Session, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	check, err := store.GetSessionHash(hash, stv)
 	if err != nil {
 		return nil, err
+	}
+	if check != nil {
+		return nil, fmt.Errorf("cannot register two sessions for the same profile")
+	}
+
+	session := storage.Session{
+		Hash:       hash,
+		Name:       name,
+		Email:      email,
+		Registered: false,
+		Access:     accessToken,
+	}
+
+	stv.Sessions = append(stv.GetSessions(), &session)
+	if err := store.backend.Write(stv); err != nil {
+		return nil, err
+	}
+	return &session, nil
+}
+
+func (store *Store) DeleteSession(hash []byte, stv *storage.STV) error {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return err
+		}
+	}
+	var index = -1
+	for i, s := range stv.Sessions {
+		if bytes.Equal(s.Hash, hash) {
+			index = i
+			break
+		}
+	}
+	if index == -1 {
+		return fmt.Errorf("could not find hash: %v", string(hash))
+	}
+	copy(stv.Sessions[index:], stv.Sessions[index+1:])
+	stv.Sessions[len(stv.Sessions)-1] = nil
+	stv.Sessions = stv.Sessions[:len(stv.Sessions)-1]
+	return store.backend.Write(stv)
+}
+
+func (store *Store) DeleteAllSessions(stv *storage.STV) error {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return err
+		}
+	}
+
+	stv.Sessions = []*storage.Session{}
+	return store.backend.Write(stv)
+}
+
+func (store *Store) GetBallotsElectionID(id string, stv *storage.STV) ([]*storage.Ballot, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 	var ballots []*storage.Ballot
 	for _, ballot := range stv.GetBallots() {
@@ -35,10 +129,13 @@ func (store *Store) GetBallotsElectionID(id string) ([]*storage.Ballot, error) {
 	return ballots, nil
 }
 
-func (store *Store) AddBallot(ballot *storage.Ballot) (*storage.Ballot, error) {
-	stv, err := store.Get()
-	if err != nil {
-		return nil, err
+func (store *Store) AddBallot(ballot *storage.Ballot, stv *storage.STV) (*storage.Ballot, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 beforeUUID:
@@ -66,10 +163,13 @@ beforeUUID:
 	return nil, fmt.Errorf("unable to find election fot AddBallot")
 }
 
-func (store *Store) EditBallot(ballot *storage.Ballot) (*storage.Ballot, error) {
-	stv, err := store.backend.Read()
-	if err != nil {
-		return nil, err
+func (store *Store) EditBallot(ballot *storage.Ballot, stv *storage.STV) (*storage.Ballot, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	for _, b := range stv.GetBallots() {
@@ -84,11 +184,15 @@ func (store *Store) EditBallot(ballot *storage.Ballot) (*storage.Ballot, error) 
 	return nil, fmt.Errorf("unable to find ballot for EditBallot")
 }
 
-func (store *Store) DeleteBallot(id string) error {
-	stv, err := store.backend.Read()
-	if err != nil {
-		return err
+func (store *Store) DeleteBallot(id string, stv *storage.STV) error {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return err
+		}
 	}
+
 	s := stv.GetBallots()
 	found := false
 	var index int
@@ -110,10 +214,13 @@ func (store *Store) DeleteBallot(id string) error {
 	return fmt.Errorf("ballot not found for DeleteBallot")
 }
 
-func (store *Store) DeleteAllBallots() error {
-	stv, err := store.backend.Read()
-	if err != nil {
-		return err
+func (store *Store) DeleteAllBallots(stv *storage.STV) error {
+	var err error
+	if stv == nil {
+		stv, err = store.backend.Read()
+		if err != nil {
+			return err
+		}
 	}
 
 	stv.Ballots = []*storage.Ballot{}
@@ -121,10 +228,13 @@ func (store *Store) DeleteAllBallots() error {
 	return store.backend.Write(stv)
 }
 
-func (store *Store) GetCandidatesElectionID(id string) ([]*storage.Candidate, error) {
-	stv, err := store.Get()
-	if err != nil {
-		return nil, err
+func (store *Store) GetCandidatesElectionID(id string, stv *storage.STV) ([]*storage.Candidate, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 	var candidates []*storage.Candidate
 	for _, candidate := range stv.GetCandidates() {
@@ -135,10 +245,13 @@ func (store *Store) GetCandidatesElectionID(id string) ([]*storage.Candidate, er
 	return candidates, nil
 }
 
-func (store *Store) FindCandidate(id string) (*storage.Candidate, error) {
-	stv, err := store.Get()
-	if err != nil {
-		return nil, err
+func (store *Store) FindCandidate(id string, stv *storage.STV) (*storage.Candidate, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 	for _, c1 := range stv.GetCandidates() {
 		if c1.GetId() == id {
@@ -148,10 +261,13 @@ func (store *Store) FindCandidate(id string) (*storage.Candidate, error) {
 	return nil, fmt.Errorf("unable to find candidate for FindCandidate: %s", id)
 }
 
-func (store *Store) AddCandidate(candidate *storage.Candidate) (*storage.Candidate, error) {
-	stv, err := store.Get()
-	if err != nil {
-		return nil, err
+func (store *Store) AddCandidate(candidate *storage.Candidate, stv *storage.STV) (*storage.Candidate, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 beforeUUID:
@@ -173,10 +289,13 @@ beforeUUID:
 	return candidate, nil
 }
 
-func (store *Store) DeleteCandidate(id string) error {
-	stv, err := store.backend.Read()
-	if err != nil {
-		return err
+func (store *Store) DeleteCandidate(id string, stv *storage.STV) error {
+	var err error
+	if stv == nil {
+		stv, err = store.backend.Read()
+		if err != nil {
+			return err
+		}
 	}
 	s := stv.GetCandidates()
 	found := false
@@ -199,10 +318,13 @@ func (store *Store) DeleteCandidate(id string) error {
 	return fmt.Errorf("candidate not found for DeleteCandidate")
 }
 
-func (store *Store) DeleteAllCandidates() error {
-	stv, err := store.backend.Read()
-	if err != nil {
-		return err
+func (store *Store) DeleteAllCandidates(stv *storage.STV) error {
+	var err error
+	if stv == nil {
+		stv, err = store.backend.Read()
+		if err != nil {
+			return err
+		}
 	}
 
 	stv.Candidates = []*storage.Candidate{}
@@ -210,18 +332,24 @@ func (store *Store) DeleteAllCandidates() error {
 	return store.backend.Write(stv)
 }
 
-func (store *Store) GetElections() ([]*storage.Election, error) {
-	stv, err := store.Get()
-	if err != nil {
-		return nil, err
+func (store *Store) GetElections(stv *storage.STV) ([]*storage.Election, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 	return stv.GetElections(), err
 }
 
-func (store *Store) FindElection(id string) (*storage.Election, error) {
-	stv, err := store.Get()
-	if err != nil {
-		return nil, err
+func (store *Store) FindElection(id string, stv *storage.STV) (*storage.Election, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 	for _, e1 := range stv.GetElections() {
 		if e1.GetId() == id {
@@ -231,10 +359,13 @@ func (store *Store) FindElection(id string) (*storage.Election, error) {
 	return nil, fmt.Errorf("unable to find election for FindElection")
 }
 
-func (store *Store) AddElection(election *storage.Election) (*storage.Election, error) {
-	stv, err := store.Get()
-	if err != nil {
-		return nil, err
+func (store *Store) AddElection(election *storage.Election, stv *storage.STV) (*storage.Election, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 beforeUUID:
@@ -259,10 +390,13 @@ beforeUUID:
 	return election, nil
 }
 
-func (store *Store) EditElection(election *storage.Election) (*storage.Election, error) {
-	stv, err := store.backend.Read()
-	if err != nil {
-		return nil, err
+func (store *Store) EditElection(election *storage.Election, stv *storage.STV) (*storage.Election, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.backend.Read()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	for _, e := range stv.GetElections() {
@@ -284,10 +418,13 @@ func (store *Store) EditElection(election *storage.Election) (*storage.Election,
 	return nil, fmt.Errorf("election not found for EditElection")
 }
 
-func (store *Store) OpenElection(id string) error {
-	stv, err := store.backend.Read()
-	if err != nil {
-		return err
+func (store *Store) OpenElection(id string, stv *storage.STV) error {
+	var err error
+	if stv == nil {
+		stv, err = store.backend.Read()
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, e1 := range stv.GetElections() {
@@ -305,10 +442,13 @@ func (store *Store) OpenElection(id string) error {
 	return nil
 }
 
-func (store *Store) CloseElection(id string) error {
-	stv, err := store.backend.Read()
-	if err != nil {
-		return err
+func (store *Store) CloseElection(id string, stv *storage.STV) error {
+	var err error
+	if stv == nil {
+		stv, err = store.backend.Read()
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, e1 := range stv.GetElections() {
@@ -324,11 +464,15 @@ func (store *Store) CloseElection(id string) error {
 	return nil
 }
 
-func (store *Store) DeleteElection(id string) error {
-	stv, err := store.backend.Read()
-	if err != nil {
-		return err
+func (store *Store) DeleteElection(id string, stv *storage.STV) error {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return err
+		}
 	}
+
 	s := stv.GetElections()
 	found := false
 	var index int
@@ -341,37 +485,37 @@ func (store *Store) DeleteElection(id string) error {
 			found = true
 
 			var ballots []*storage.Ballot
-			ballots, err = store.GetBallotsElectionID(id)
+			ballots, err = store.GetBallotsElectionID(id, stv)
 			if err != nil {
 				return err
 			}
 			for _, b1 := range ballots {
-				err = store.DeleteBallot(b1.GetId())
+				err = store.DeleteBallot(b1.GetId(), stv)
 				if err != nil {
 					return err
 				}
 			}
 
 			var candidates []*storage.Candidate
-			candidates, err = store.GetCandidatesElectionID(id)
+			candidates, err = store.GetCandidatesElectionID(id, stv)
 			if err != nil {
 				return err
 			}
 			for _, c1 := range candidates {
-				err = store.DeleteCandidate(c1.GetId())
+				err = store.DeleteCandidate(c1.GetId(), stv)
 				if err != nil {
 					return err
 				}
 			}
 
 			var urls []*storage.URL
-			urls, err = store.GetURLsElectionID(id)
+			urls, err = store.GetURLsElectionID(id, stv)
 			if err != nil {
 				return err
 			}
 
 			for _, u1 := range urls {
-				err = store.DeleteURL(u1.GetUrl())
+				err = store.DeleteURL(u1.GetUrl(), stv)
 				if err != nil {
 					return err
 				}
@@ -389,10 +533,13 @@ func (store *Store) DeleteElection(id string) error {
 	return store.backend.Write(stv)
 }
 
-func (store *Store) DeleteAllElections() error {
-	stv, err := store.backend.Read()
-	if err != nil {
-		return err
+func (store *Store) DeleteAllElections(stv *storage.STV) error {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return err
+		}
 	}
 
 	stv.Elections = []*storage.Election{}
@@ -403,10 +550,13 @@ func (store *Store) DeleteAllElections() error {
 	return store.backend.Write(stv)
 }
 
-func (store *Store) GetURLsElectionID(id string) ([]*storage.URL, error) {
-	stv, err := store.Get()
-	if err != nil {
-		return nil, err
+func (store *Store) GetURLsElectionID(id string, stv *storage.STV) ([]*storage.URL, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 	var urls []*storage.URL
 	for _, url := range stv.GetUrls() {
@@ -417,10 +567,13 @@ func (store *Store) GetURLsElectionID(id string) ([]*storage.URL, error) {
 	return urls, nil
 }
 
-func (store *Store) FindURL(url string) (*storage.URL, error) {
-	stv, err := store.Get()
-	if err != nil {
-		return nil, err
+func (store *Store) FindURL(url string, stv *storage.STV) (*storage.URL, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 	for _, u1 := range stv.GetUrls() {
 		if u1.GetUrl() == url {
@@ -430,10 +583,13 @@ func (store *Store) FindURL(url string) (*storage.URL, error) {
 	return nil, fmt.Errorf("unable to find url for FindURL")
 }
 
-func (store *Store) AddURL(url *storage.URL) (*storage.URL, error) {
-	stv, err := store.Get()
-	if err != nil {
-		return nil, err
+func (store *Store) AddURL(url *storage.URL, stv *storage.STV) (*storage.URL, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 beforeUUID:
@@ -463,10 +619,13 @@ beforeUUID:
 	return url, nil
 }
 
-func (store *Store) SetURLVoted(url string) error {
-	stv, err := store.backend.Read()
-	if err != nil {
-		return err
+func (store *Store) SetURLVoted(url string, stv *storage.STV) error {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return err
+		}
 	}
 
 	for _, u1 := range stv.GetUrls() {
@@ -481,10 +640,13 @@ func (store *Store) SetURLVoted(url string) error {
 	return nil
 }
 
-func (store *Store) DeleteURL(url string) error {
-	stv, err := store.backend.Read()
-	if err != nil {
-		return err
+func (store *Store) DeleteURL(url string, stv *storage.STV) error {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return err
+		}
 	}
 	s := stv.GetUrls()
 	found := false
@@ -507,10 +669,13 @@ func (store *Store) DeleteURL(url string) error {
 	return fmt.Errorf("url not found for DeleteURL")
 }
 
-func (store *Store) DeleteAllURLs() error {
-	stv, err := store.backend.Read()
-	if err != nil {
-		return err
+func (store *Store) DeleteAllURLs(stv *storage.STV) error {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return err
+		}
 	}
 
 	stv.Urls = []*storage.URL{}
@@ -518,18 +683,24 @@ func (store *Store) DeleteAllURLs() error {
 	return store.backend.Write(stv)
 }
 
-func (store *Store) GetAllowRegistration() (bool, error) {
-	stv, err := store.Get()
-	if err != nil {
-		return false, err
+func (store *Store) GetAllowRegistration(stv *storage.STV) (bool, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return false, err
+		}
 	}
 	return stv.GetAllowRegistration(), err
 }
 
-func (store *Store) SetAllowRegistration(allow bool) (bool, error) {
-	stv, err := store.Get()
-	if err != nil {
-		return false, err
+func (store *Store) SetAllowRegistration(allow bool, stv *storage.STV) (bool, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return false, err
+		}
 	}
 
 	stv.AllowRegistration = allow
@@ -541,82 +712,94 @@ func (store *Store) SetAllowRegistration(allow bool) (bool, error) {
 	return allow, nil
 }
 
-func (store *Store) GetVoters() ([]*storage.Voter, error) {
-	stv, err := store.Get()
-	if err != nil {
-		return nil, err
-	}
-	return stv.GetVoters(), err
-}
-
-func (store *Store) FindVoter(email string) (*storage.Voter, error) {
-	stv, err := store.Get()
-	if err != nil {
-		return nil, err
-	}
-	for _, v1 := range stv.GetVoters() {
-		if v1.GetEmail() == email {
-			return v1, nil
+func (store *Store) GetVoters(stv *storage.STV) ([]*storage.Session, error) {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return nil, err
 		}
 	}
-	return nil, fmt.Errorf("unable to find voter for FindVoter")
-}
-
-func (store *Store) AddVoter(voter *storage.Voter) (*storage.Voter, error) {
-	stv, err := store.Get()
-	if err != nil {
-		return &storage.Voter{}, err
-	}
-
-	for _, v := range stv.GetVoters() {
-		if v.GetEmail() == voter.GetEmail() {
-			return &storage.Voter{}, fmt.Errorf("unable to add voter duplicate email for AddVoter")
+	sessions := []*storage.Session{}
+	for _, session := range stv.GetSessions() {
+		if session.GetRegistered() {
+			sessions = append(sessions, session)
 		}
 	}
+	return sessions, nil
+}
 
-	stv.Voters = append(stv.GetVoters(), voter)
+func (store *Store) AddVoter(voter []byte, stv *storage.STV) error {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return err
+		}
+	}
+	session, err := store.GetSessionHash(voter, stv)
+	if err != nil {
+		return err
+	}
+
+	voters, err := store.GetVoters(stv)
+	if err != nil {
+		return err
+	}
+
+	for _, v := range voters {
+		if v.GetEmail() == session.GetEmail() {
+			return fmt.Errorf("unable to add voter duplicate email for AddVoter")
+		}
+	}
+	session.Registered = true
 
 	if err = store.backend.Write(stv); err != nil {
-		return &storage.Voter{}, err
-	}
-
-	return voter, nil
-}
-
-func (store *Store) DeleteVoter(email string) error {
-	stv, err := store.backend.Read()
-	if err != nil {
 		return err
 	}
 
-	s := stv.GetVoters()
-	found := false
-	var index int
-	var v *storage.Voter
-	for index, v = range s {
-		if v.GetEmail() == email {
-			found = true
-			break
+	return nil
+}
+
+func (store *Store) DeleteVoter(voter []byte, stv *storage.STV) error {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return err
 		}
 	}
 
-	if found {
-		copy(s[index:], s[index+1:]) // Shift a[i+1:] left one index
-		s[len(s)-1] = nil            // Erase last element (write zero value)
-		stv.Voters = s[:len(s)-1]    // Truncate slice
-
-		return store.backend.Write(stv)
+	session, err := store.GetSessionHash(voter, stv)
+	if err != nil {
+		return err
 	}
-	return fmt.Errorf("voter not found for DeleteVoter")
+	if session == nil {
+		return fmt.Errorf("no user with that hash")
+	}
+
+	session.Registered = false
+
+	return store.backend.Write(stv)
 }
 
-func (store *Store) DeleteAllVoters() error {
-	stv, err := store.backend.Read()
+func (store *Store) DeleteAllVoters(stv *storage.STV) error {
+	var err error
+	if stv == nil {
+		stv, err = store.Get()
+		if err != nil {
+			return err
+		}
+	}
+
+	voters, err := store.GetVoters(stv)
 	if err != nil {
 		return err
 	}
 
-	stv.Voters = []*storage.Voter{}
+	for _, session := range voters {
+		session.Registered = false
+	}
 
 	return store.backend.Write(stv)
 }

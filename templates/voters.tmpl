@@ -41,7 +41,7 @@
                         <tr>
                             <td>{{.Name}}</td>
                             <td>{{.Email}}</td>
-                            <td><a class="button is-danger" onclick="removeVoterModal('{{.Email}}', '{{.Name}}')">Remove</a></td>
+                            <td><a class="button is-danger" onclick="removeVoterModal('{{stringify .Hash}}', '{{.Name}}')">Remove</a></td>
                         </tr>
                     {{end}}
                     </tbody>
@@ -68,7 +68,7 @@
         </div>
         <br>
         <br>
-        <div class="card prevent-select">
+        <!-- <div class="card prevent-select">
             <div class="card-content">
                 <p>Enter the name and the email of the voter, they will be emailed a link of an election when one
                     opens.</p>
@@ -91,7 +91,7 @@
                     <button class="button is-link" onclick="submitNewVoter()">Add voter</button>
                 </form>
             </div>
-        </div>
+        </div> -->
         <br><br><br>
         <div id="removeVoterModal" class="modal">
             <div class="modal-background"></div>
@@ -126,46 +126,46 @@
                 document.getElementById("registrationToggleForm").submit();
             }
 
-            let valid = false;
+            // let valid = false;
 
-            function submitNewVoter() {
-                if (valid) {
-                    $('#addVoter').submit();
-                }
-            }
+            // function submitNewVoter() {
+            //     if (valid) {
+            //         $('#addVoter').submit();
+            //     }
+            // }
 
-            let email = "";
+            let hash = "";
 
-            function removeVoterModal(email1, name) {
-                email = email1
+            function removeVoterModal(hash1, name) {
+                hash = hash1
                 document.getElementById("removeVoterModal").classList.add("is-active");
                 document.getElementById("voterModalTitle").innerHTML = "Are you sure you want to remove (" + name + ")";
             }
 
             function removeVoter() {
-                document.getElementById("removeVoterForm").action = '/admin/voters/delete' + '?' + $.param({"email": email});
+                document.getElementById("removeVoterForm").action = '/admin/voters/delete' + '?' + "hash=" + hash;
                 $('#removeVoterForm').submit();
             }
 
-            function ValidateEmail() {
-                const validRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/;
-                const email = $("#email"), emailAlert = $("#emailAlert");
-                if (email.val().match(validRegex)) {
-                    emailAlert.removeClass("is-danger");
-                    emailAlert.addClass("is-success");
-                    email.removeClass("is-danger");
-                    email.addClass("is-success");
-                    emailAlert.innerText = "This email is valid";
-                    valid = true;
-                } else {
-                    emailAlert.removeClass("is-success");
-                    emailAlert.addClass("is-danger");
-                    email.removeClass("is-success");
-                    email.addClass("is-danger");
-                    emailAlert.innerText = "This email is invalid";
-                    valid = false;
-                }
-            }
+            // function ValidateEmail() {
+            //     const validRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/;
+            //     const email = $("#email"), emailAlert = $("#emailAlert");
+            //     if (email.val().match(validRegex)) {
+            //         emailAlert.removeClass("is-danger");
+            //         emailAlert.addClass("is-success");
+            //         email.removeClass("is-danger");
+            //         email.addClass("is-success");
+            //         emailAlert.innerText = "This email is valid";
+            //         valid = true;
+            //     } else {
+            //         emailAlert.removeClass("is-success");
+            //         emailAlert.addClass("is-danger");
+            //         email.removeClass("is-success");
+            //         email.addClass("is-danger");
+            //         emailAlert.innerText = "This email is invalid";
+            //         valid = false;
+            //     }
+            // }
         </script>
     </div>
 {{end}}
