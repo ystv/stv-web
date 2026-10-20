@@ -93,9 +93,6 @@ func AuthMw(_store *store.Store, kc structs.Keycloak) echo.MiddlewareFunc {
 			hash, ok := session.Values["profile"].([32]byte)
 			s, err := local_store.GetSessionHash(hash[:], nil)
 			if session.IsNew || !ok || s == nil {
-				if err = session.Save(c.Request(), c.Response()); err != nil {
-					return err
-				}
 				return oidcRedirect(c, kc)
 			}
 			profile := ProfileFromSession(s)
@@ -204,7 +201,7 @@ func MakeOidcConf(kc structs.Keycloak, c context.Context) (*OidcConf, error) {
 
 func oidcRedirect(c echo.Context, kc structs.Keycloak) error {
 	session, err := cookie.GetSession(c, COOKIE)
-	if err != nil {
+	if err != nil && session == nil {
 		return err
 	}
 
@@ -222,6 +219,7 @@ func oidcRedirect(c echo.Context, kc structs.Keycloak) error {
 		oauth2.AccessTypeOnline,
 		oauth2.S256ChallengeOption(code_verifier),
 	)
+
 	session.Values[PKCE_COOKIE] = code_verifier
 	session.Values[STATE] = state
 
