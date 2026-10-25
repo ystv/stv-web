@@ -1,4 +1,4 @@
-FROM golang:1.25.5-alpine3.23 AS build
+FROM golang:1.27.2-alpine3.24 AS build
 
 LABEL site="ystv-stv-web"
 LABEL stage="builder"
