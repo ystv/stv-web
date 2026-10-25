@@ -1,16 +1,22 @@
 package main
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
+	"github.com/labstack/echo/v4"
 	_ "golang.org/x/crypto/x509roots/fallback" // CA bundle for FROM Scratch
 
+	"github.com/ystv/stv-web/auth"
 	"github.com/ystv/stv-web/controllers"
+	"github.com/ystv/stv-web/cookie"
 	"github.com/ystv/stv-web/mail"
 	"github.com/ystv/stv-web/store"
 	"github.com/ystv/stv-web/structs"
@@ -75,18 +81,6 @@ func main() {
 			debug = false
 		}
 
-		var adPort int
-		adPort, err = strconv.Atoi(os.Getenv("STV_AD_PORT"))
-		if err != nil {
-			log.Fatalf("failed to get ad port env: %+v", err)
-		}
-
-		var adSecurity int
-		adSecurity, err = strconv.Atoi(os.Getenv("STV_AD_SECURITY"))
-		if err != nil {
-			log.Fatalf("failed to get ad security env: %+v", err)
-		}
-
 		var mailPort int
 		mailPort, err = strconv.Atoi(os.Getenv("STV_MAIL_PORT"))
 		if err != nil {
@@ -99,18 +93,13 @@ func main() {
 					Debug:      debug,
 					Address:    os.Getenv("STV_ADDRESS"),
 					DomainName: os.Getenv("STV_DOMAIN_NAME"),
+					Port:       os.Getenv("STV_PORT"),
 				},
-				AD: structs.AD{
-					BypassUsername: os.Getenv("STV_AD_BYPASS_USERNAME"),
-					BypassPassword: os.Getenv("STV_AD_BYPASS_PASSWORD"),
-					Server:         os.Getenv("STV_AD_SERVER"),
-					Port:           adPort,
-					BaseDN:         os.Getenv("STV_AD_BASE_DN"),
-					Security:       adSecurity,
-					Bind: structs.ADBind{
-						Username: os.Getenv("STV_AD_BIND_USERNAME"),
-						Password: os.Getenv("STV_AD_BIND_PASSWORD"),
-					},
+				Keycloak: structs.Keycloak{
+					URL:      os.Getenv("STV_KEYCLOAK_URL"),
+					Realm:    os.Getenv("STV_KEYCLOAK_REAL"),
+					ClientID: os.Getenv("STV_KEYCLOAK_CLIENTID"),
+					Secret:   os.Getenv("STV_KEYCLOAK_SECRET"),
 				},
 				Mail: structs.Mail{
 					Host:      os.Getenv("STV_MAIL_HOST"),
@@ -168,9 +157,9 @@ func main() {
 		log.Fatal("Failed to create store: ", err)
 	}
 
-	_, err = newStore.GetAllowRegistration()
+	_, err = newStore.GetAllowRegistration(nil)
 	if err != nil {
-		_, err = newStore.SetAllowRegistration(false)
+		_, err = newStore.SetAllowRegistration(false, nil)
 		if err != nil {
 			log.Fatal("Failed to initialise allow registration in store: ", err)
 		}
@@ -178,14 +167,22 @@ func main() {
 
 	controller := controllers.GetController(config.Server.DomainName)
 
+	config.Keycloak.Address = fmt.Sprintf("%v:%v", strings.Trim(config.Server.Address, "/"), config.Server.Port)
+	authKey := sha256.Sum256([]byte(Version + Commit))
+	cookieStore := sessions.NewCookieStore(authKey[:])
+
 	router1 := New(NewRouter{
 		Config: config,
 		Repos:  controllers.NewRepos(controller, mailer, newStore, mailConfig, Commit, Version),
 		Debug:  config.Server.Debug,
 		Mailer: mailer,
+		Auth: []echo.MiddlewareFunc{
+			cookie.SessionMiddleware(cookieStore),
+			auth.Middleware(newStore, config.Keycloak),
+		},
 	})
 
-	log.Printf("YSTV STV voting site: %s, commit: %s, version: %s\n", config.Server.Address, Commit, Version)
+	log.Printf("YSTV STV voting site: %s, commit: %s, version: %s\n", config.Server.Address+":"+config.Server.Port, Commit, Version)
 
 	err = router1.Start()
 	if err != nil {

@@ -6,6 +6,7 @@ import (
 	"html/template"
 	"io"
 	"log"
+	"net/url"
 	"time"
 )
 
@@ -57,6 +58,9 @@ func (t *Templater) RenderTemplate(w io.Writer, data interface{}, mainTmpl Templ
 		},
 		"divPercent": func(a, b uint64) string {
 			return fmt.Sprintf("%03.2f%%", (float64(a)/float64(b))*float64(100))
+		},
+		"stringify": func(b []byte) string {
+			return url.QueryEscape(string(b))
 		},
 	})
 

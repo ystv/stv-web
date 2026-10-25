@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/labstack/echo/v4"
@@ -32,6 +33,7 @@ func (v *ErrorRepo) CustomHTTPErrorHandler(err error, c echo.Context) {
 	} else {
 		status = 500
 	}
+	fmt.Printf("Error Handler: %v", he)
 	c.Response().WriteHeader(status)
 	data := struct {
 		Code  int
